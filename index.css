@@ -1,0 +1,31 @@
+.notify {
+  padding: 0.5rem;
+}
+
+table {
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+th {
+  background-color: hsl(0, 0%, 85%);
+  padding: 0.25rem;
+}
+
+td {
+  background-color: hsl(0, 0%, 95%);
+  padding: 0.25rem;
+}
+
+select,
+button {
+  background-color: hsl(0, 0%, 85%);
+  padding: 0.2rem;
+  margin-bottom: 1rem;
+}
+
+input {
+  width: 3rem;
+  padding: 0.2rem;
+  margin-bottom: 1rem;
+}
