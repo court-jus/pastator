@@ -62,6 +62,110 @@ const printPort = (port, list, withAction = null) => {
   list.appendChild(row);
 };
 
+const tracks = [
+  {
+    notes: [48, 48, 48, 48],
+    rythm: [100, 0, 0, 60],
+    baseVelocity: 1,
+    channel: 3,
+    interval: null,
+    division: 250,
+    playing: false,
+    position: 0,
+  },
+  {
+    notes: [48, 51, 43, 48, 51, 55, 48],
+    rythm: [100, 90, 100, 95, 101, 94],
+    baseVelocity: 1,
+    channel: 1,
+    interval: null,
+    division: 1000,
+    playing: false,
+    position: 0,
+  },
+  {
+    notes: [51, 43, 48, 51, 55, 48],
+    rythm: [100, 90, 100, 95, 101, 94],
+    baseVelocity: 0.8,
+    channel: 15,
+    interval: null,
+    division: 1500,
+    playing: false,
+    position: 0,
+  },
+  {
+    notes: [48, 48, 51, 43, 48, 51, 55, 48],
+    rythm: [100, 90, 100, 95, 94],
+    baseVelocity: 0.8,
+    channel: 14,
+    interval: null,
+    division: 750,
+    playing: false,
+    position: 0,
+  },
+  {
+    notes: [60, 63, 60, 67, 62, 60, 63, 68, 70, 60, 65],
+    rythm: [80, 60, 55, 30, 45],
+    baseVelocity: 0.8,
+    channel: 0,
+    interval: null,
+    division: 250,
+    playing: false,
+    position: 0,
+  },
+  {
+    notes: [60, 60, 67, 72, 55],
+    rythm: [100, 60, 100, 30, 60, 70, 80, 50, 95],
+    baseVelocity: 0.65,
+    channel: 2,
+    interval: null,
+    division: 125,
+    playing: false,
+    position: 0,
+  },
+];
+
+const play = () => {
+  if (!sendDevice) return;
+  for (let track of tracks) {
+    if (track.playing) {
+      window.clearInterval(track.interval);
+      track.playing = false;
+    } else {
+      track.interval = window.setInterval(() => {
+        const note = track.notes[track.position % track.notes.length];
+        const velocity =
+          track.rythm[track.position % track.rythm.length] * track.baseVelocity;
+        if (velocity > 0) {
+          playNote(
+            sendDevice,
+            track.channel,
+            note,
+            velocity,
+            track.division - 10
+          );
+        }
+        track.position += 1;
+      }, track.division);
+      track.playing = true;
+    }
+  }
+};
+
+const playNote = (port, channel, note, velocity, duration) => {
+  /* To send MIDI cc, use:
+        const channel = document.getElementById('sendControlChannel').value - 1;
+        const number = document.getElementById('sendControlNumber').value;
+        const value = document.getElementById('sendControlValue').value;
+        sendDevice.send([0x80 | (3 << 4) | channel, number, value]);
+      */
+  port.send([0x80 | (1 << 4) | channel, note, velocity]);
+
+  window.setTimeout(() => {
+    sendDevice.send([0x80 | (0 << 4) | channel, note, 64]);
+  }, duration);
+};
+
 // Update the list of ports.
 const updateOutput = () => {
   const output = document.getElementById("output");
@@ -78,22 +182,8 @@ const updateOutput = () => {
         sendDevice = port;
         if (sendDevice) sendDevice.open();
       }
-
-      if (sendDevice) {
-        /* To send MIDI cc, use:
-              const channel = document.getElementById('sendControlChannel').value - 1;
-              const number = document.getElementById('sendControlNumber').value;
-              const value = document.getElementById('sendControlValue').value;
-              sendDevice.send([0x80 | (3 << 4) | channel, number, value]);
-            */
-        const channel = document.getElementById("sendNoteChannel").value - 1;
-        const note = musicalContext.rootNote;
-        const velocity = musicalContext.baseVelocity;
-        sendDevice.send([0x80 | (1 << 4) | channel, note, velocity]);
-
-        window.setTimeout(() => {
-          sendDevice.send([0x80 | (0 << 4) | channel, note, 64]);
-        }, 100);
+      if (sendDevice !== null) {
+        play(); // Note(sendDevice, channel, note, velocity, 1000);
       }
     };
     printPort(port, output, midiOutCallback);
@@ -109,6 +199,8 @@ const updateInput = () => {
 
   for (const port of midi.inputs.values()) {
     const clockCallback = (port) => {
+      console.log("Not implemented");
+      return;
       resetInput();
 
       if (!port) return;
