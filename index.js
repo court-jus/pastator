@@ -5,6 +5,8 @@ import { showEvent } from "./logEvents.js";
 // Notification area to show the connection and error messages.
 const notify = document.getElementById("notify");
 
+const notesInput = document.getElementById("notes-input");
+
 // Log section showing state change messages.
 let midi = null;
 
@@ -62,7 +64,7 @@ const printPort = (port, list, withAction = null) => {
   list.appendChild(row);
 };
 
-const tracks = [
+const tracks_1 = [
   {
     notes: [48, 48, 48, 48],
     rythm: [100, 0, 0, 60],
@@ -125,6 +127,47 @@ const tracks = [
   },
 ];
 
+class Track {
+  constructor(channel, baseVelocity, division) {
+    this.channel = channel;
+    this.baseVelocity = baseVelocity;
+    this.division = division;
+    this.position = 0;
+    this.playing = false;
+    this.interval = null;
+    this.lastNotes = [];
+  }
+
+  note() {
+    if (!notesInput) return 60;
+    const availableNotes = notesInput.value
+      .split(" ")
+      .map((val) => parseInt(val, 10));
+    const chosenNote =
+      availableNotes[Math.floor(Math.random() * availableNotes.length)];
+    this.lastNotes.push(chosenNote);
+    if (this.lastNotes.length >= 5) {
+      this.lastNotes.shift();
+    }
+    return chosenNote;
+  }
+
+  rythm() {
+    const restProbability = 0.3;
+    if (Math.random() < restProbability) return 0;
+    const rythms = [
+      [100, 60, 100, 30, 60, 70, 80, 50, 95],
+      [80, 60, 55, 30, 45],
+    ];
+    const chosenRythm = rythms[Math.floor(Math.random() * rythms.length)];
+    const chosenVelocity =
+      chosenRythm[this.position % chosenRythm.length] * this.baseVelocity;
+    return chosenVelocity;
+  }
+}
+
+const tracks = [new Track(2, 0.65, 250)];
+
 const play = () => {
   if (!sendDevice) return;
   for (let track of tracks) {
@@ -133,9 +176,8 @@ const play = () => {
       track.playing = false;
     } else {
       track.interval = window.setInterval(() => {
-        const note = track.notes[track.position % track.notes.length];
-        const velocity =
-          track.rythm[track.position % track.rythm.length] * track.baseVelocity;
+        const note = track.note();
+        const velocity = track.rythm();
         if (velocity > 0) {
           playNote(
             sendDevice,
@@ -167,7 +209,7 @@ const playNote = (port, channel, note, velocity, duration) => {
 };
 
 // Update the list of ports.
-const updateOutput = () => {
+const updateOutput = (doPlay = false) => {
   const output = document.getElementById("output");
 
   if (sendDevice && sendDevice.state == "disconnected") sendDevice = null;
@@ -186,6 +228,13 @@ const updateOutput = () => {
         play(); // Note(sendDevice, channel, note, velocity, 1000);
       }
     };
+    if (
+      port.id ===
+        "6FB73D1DB8F9B18CAF942CFDFEEE36D6181DA17A243E5F69FA52717D79ABA625" &&
+      doPlay
+    ) {
+      midiOutCallback(port);
+    }
     printPort(port, output, midiOutCallback);
   }
 };
@@ -342,7 +391,7 @@ const connectSystem = () => {
         updateInput();
         resetInput();
 
-        updateOutput();
+        updateOutput(true);
       },
       (error) => {
         notify.innerHTML =
@@ -352,9 +401,12 @@ const connectSystem = () => {
     );
 };
 
+console.log("Starting up...");
 if (navigator.requestMIDIAccess) {
+  console.log("Requesting MIDI Access");
   connectSystem();
 } else {
+  console.error("No WebMIDI support found");
   notify.innerText = "No WebMIDI support found";
   notify.style.backgroundColor = "hsl(0, 50%, 85%)";
 }
