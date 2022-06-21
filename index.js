@@ -7,6 +7,16 @@ const notify = document.getElementById("notify");
 
 const notesInput = document.getElementById("notes-input");
 
+const addNote = (note, elementId, limit = 8) => {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  element.value += " " + note;
+  const notes = element.value.split(" ");
+  if (notes.length > limit) {
+    element.value = notes.slice(notes.length - limit).join(" ");
+  }
+}
+
 // Log section showing state change messages.
 let midi = null;
 
@@ -64,74 +74,13 @@ const printPort = (port, list, withAction = null) => {
   list.appendChild(row);
 };
 
-const tracks_1 = [
-  {
-    notes: [48, 48, 48, 48],
-    rythm: [100, 0, 0, 60],
-    baseVelocity: 1,
-    channel: 3,
-    interval: null,
-    division: 250,
-    playing: false,
-    position: 0,
-  },
-  {
-    notes: [48, 51, 43, 48, 51, 55, 48],
-    rythm: [100, 90, 100, 95, 101, 94],
-    baseVelocity: 1,
-    channel: 1,
-    interval: null,
-    division: 1000,
-    playing: false,
-    position: 0,
-  },
-  {
-    notes: [51, 43, 48, 51, 55, 48],
-    rythm: [100, 90, 100, 95, 101, 94],
-    baseVelocity: 0.8,
-    channel: 15,
-    interval: null,
-    division: 1500,
-    playing: false,
-    position: 0,
-  },
-  {
-    notes: [48, 48, 51, 43, 48, 51, 55, 48],
-    rythm: [100, 90, 100, 95, 94],
-    baseVelocity: 0.8,
-    channel: 14,
-    interval: null,
-    division: 750,
-    playing: false,
-    position: 0,
-  },
-  {
-    notes: [60, 63, 60, 67, 62, 60, 63, 68, 70, 60, 65],
-    rythm: [80, 60, 55, 30, 45],
-    baseVelocity: 0.8,
-    channel: 0,
-    interval: null,
-    division: 250,
-    playing: false,
-    position: 0,
-  },
-  {
-    notes: [60, 60, 67, 72, 55],
-    rythm: [100, 60, 100, 30, 60, 70, 80, 50, 95],
-    baseVelocity: 0.65,
-    channel: 2,
-    interval: null,
-    division: 125,
-    playing: false,
-    position: 0,
-  },
-];
-
 class Track {
-  constructor(channel, baseVelocity, division) {
+  constructor(channel, transpose, baseVelocity, division, rythmDefinition) {
     this.channel = channel;
+    this.transpose = transpose;
     this.baseVelocity = baseVelocity;
     this.division = division;
+    this.rythmDefinition = rythmDefinition;
     this.position = 0;
     this.playing = false;
     this.interval = null;
@@ -149,24 +98,27 @@ class Track {
     if (this.lastNotes.length >= 5) {
       this.lastNotes.shift();
     }
-    return chosenNote;
+    return chosenNote + this.transpose;
   }
 
   rythm() {
-    const restProbability = 0.3;
-    if (Math.random() < restProbability) return 0;
-    const rythms = [
-      [100, 60, 100, 30, 60, 70, 80, 50, 95],
-      [80, 60, 55, 30, 45],
-    ];
-    const chosenRythm = rythms[Math.floor(Math.random() * rythms.length)];
-    const chosenVelocity =
-      chosenRythm[this.position % chosenRythm.length] * this.baseVelocity;
-    return chosenVelocity;
+    const chosenVelocity = this.rythmDefinition[this.position % this.rythmDefinition.length];
+    const restThreshold = 100;
+    if (chosenVelocity >= restThreshold) {
+      console.log("beat");
+      return chosenVelocity * this.baseVelocity;
+    }
+    const restProbability = chosenVelocity / restThreshold;
+    if (Math.random() >= restProbability) return 0;
+    return chosenVelocity * this.baseVelocity;
   }
 }
 
-const tracks = [new Track(2, 0.65, 250)];
+const tracks = [
+  new Track(parseInt(document.getElementById("channel").value, 10) - 1, 12, 0.65, 250, [100, 50, 80, 50]),
+  new Track(1, 0, 0.7, 125, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30])
+];
+
 
 const play = () => {
   if (!sendDevice) return;
@@ -229,8 +181,9 @@ const updateOutput = (doPlay = false) => {
       }
     };
     if (
-      port.id ===
-        "6FB73D1DB8F9B18CAF942CFDFEEE36D6181DA17A243E5F69FA52717D79ABA625" &&
+      (port.id ===
+        "6FB73D1DB8F9B18CAF942CFDFEEE36D6181DA17A243E5F69FA52717D79ABA625" ||
+        port.id === "3oswrdB/m2nfnht/pH8UKoqoTB/9TXbp/Fc5CfmxrzA=") &&
       doPlay
     ) {
       midiOutCallback(port);
@@ -239,7 +192,7 @@ const updateOutput = (doPlay = false) => {
   }
 };
 
-const updateInput = () => {
+const updateInput = (doPlay = false) => {
   const input = document.getElementById("input");
 
   if (receiveDevice && receiveDevice.state == "disconnected") resetInput();
@@ -247,9 +200,7 @@ const updateInput = () => {
   while (input.firstChild) input.firstChild.remove();
 
   for (const port of midi.inputs.values()) {
-    const clockCallback = (port) => {
-      console.log("Not implemented");
-      return;
+    const inputCallback = (port) => {
       resetInput();
 
       if (!port) return;
@@ -259,12 +210,25 @@ const updateInput = () => {
         const m = getMIDIMessage(message);
         if (m.type == "System" && m.channel == "Clock") {
           console.log("tick");
+        } else if (m.type === "Note On") {
+          for (const track of tracks.filter((track) => track.channel === m.channel - 1)) {
+            addNote(m.data[1], "notes-input", 13);
+          }
+        } else if (m.type === "Note Off") {
+          // pass
         } else {
           console.log(m);
         }
       };
     };
-    printPort(port, input, clockCallback);
+    if (
+      (port.id ===
+        "eXNR1/GHU/qmukRRdYDlpwkSKWmFPBL7iTsTvR+ehYM=" && doPlay)
+    ) {
+      console.log("bind to input", port);
+      inputCallback(port);
+    }
+    printPort(port, input, inputCallback);
   }
 };
 
@@ -388,9 +352,9 @@ const connectSystem = () => {
           updateOutput();
         };
 
-        updateInput();
         resetInput();
 
+        updateInput(true);
         updateOutput(true);
       },
       (error) => {

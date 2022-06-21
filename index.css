@@ -19,13 +19,13 @@ td {
 
 select,
 button {
-  background-color: hsl(0, 0%, 85%);
   padding: 0.2rem;
   margin-bottom: 1rem;
 }
 
 input {
-  width: 3rem;
   padding: 0.2rem;
   margin-bottom: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
