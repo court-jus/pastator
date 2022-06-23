@@ -2,8 +2,10 @@
 
 import { showEvent } from "./logEvents.js";
 
-const favoriteMidiOut = "SH9i9CHH4tcApsEdzLIZbcyjZylnEMXYbysOsbIaeKY=";
-const favoriteMidiIn = "eXNR1/GHU/qmukRRdYDlpwkSKWmFPBL7iTsTvR+ehYM=";
+// const favoriteMidiOut = "SH9i9CHH4tcApsEdzLIZbcyjZylnEMXYbysOsbIaeKY=";
+const favoriteMidiOut = "lxicVCpkG7/gBf3veX6RVSWQPhV1parZ+R7ToYgcOYM=";
+// const favoriteMidiIn = "eXNR1/GHU/qmukRRdYDlpwkSKWmFPBL7iTsTvR+ehYM=";
+const favoriteMidiIn = "3oswrdB/m2nfnht/pH8UKoqoTB/9TXbp/Fc5CfmxrzA=";
 
 // Notification area to show the connection and error messages.
 const notify = document.getElementById("notify");
@@ -15,6 +17,7 @@ let midi = null;
 // Send and receive MIDI notes.
 let sendDevice = null;
 let receiveDevice = null;
+let masterClock = 0;
 
 const musicalContext = {
   rootNote: 60,
@@ -74,13 +77,14 @@ class Track {
     this.division = division;
     this.rythmDefinition = rythmDefinition;
     this.position = 0;
-    this.playing = false;
+    this.playing = true;
     this.timeout = null;
     this.lastNotes = [];
     this.availableNotes = notesAvailable;
     this.maxNotes = 7;
     this.inputs = {
       channel: null,
+      division: null,
       notes: null,
       rythm: null,
       vol: null
@@ -89,6 +93,7 @@ class Track {
 
   refreshDisplay() {
     if (this.inputs.channel) this.inputs.channel.value = this.channel;
+    if (this.inputs.division) this.inputs.division.value = this.division;
     if (this.inputs.notes) this.inputs.notes.value = this.availableNotes.join(" ");
     if (this.inputs.rythm) this.inputs.rythm.value = this.rythmDefinition.join(" ");
     if (this.inputs.vol) this.inputs.vol.value = this.baseVelocity;
@@ -129,75 +134,94 @@ class Track {
   }
 
   play() {
-      const note = this.note();
-      const velocity = this.rythm();
-      if (velocity > 0) {
-        playNote(
-          sendDevice,
-          this.channel,
-          note,
-          velocity,
-          this.division - 10
-        );
-      }
-      this.position += 1;
-      if (this.playing) {
-        this.timeout = window.setTimeout(() => {this.play()}, this.division);
-      }
+    const note = this.note();
+    const velocity = this.rythm();
+    if (velocity > 0) {
+      playNote(
+        sendDevice,
+        this.channel,
+        note,
+        velocity,
+        250
+      );
+    }
+    this.position += 1;
+  }
+
+  tick() {
+    if (!this.playing) return;
+    if (masterClock % this.division === 0) {
+      this.play();
+    }
   }
 }
 
 const tracks = [
-  // piano
-  new Track(0, 0, 100, 125, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30], [60, 48]),
-  new Track(1, 0, 0, 125, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30], [60, 48]),
+  // Bassline
+  new Track(0, 0, 100, 6, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30],
+    [36, 36, 36, 36, 43, 43, 48]),
+  // Lead
+  new Track(1, 0, 80, 12, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30],
+    [60, 60, 60, 63, 65, 67, 67, 68, 70, 72]),
+    /*
   new Track(2, 0, 0, 125, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30], [60, 48]),
   // drums
+  */
   // 36 = kick
-  new Track(9, 0, 65, 250, [100, 0, 0, 0], [36]),
+  new Track(9, 0, 55, 6, [100, 0, 0, 0], [36]),
   // 37 = rim
   // 39 = clap
   // 41 = low snare or kick
   // 38 40 43 45 = snare
-  new Track(9, 0, 65, 250, [0, 0, 100, 0], [38]),
+  new Track(9, 0, 50, 6, [0, 0, 100, 0, 0, 0, 0, 100], [38]),
   // 47 48 50 = tom
   // 46 51 53 = cymbal
   // 54 = tambourin
   // 42 = CH
-  new Track(9, 0, 45, 125, [100], [42]) // [80, 65, 70, 65, 80, 55, 90, 60, 85, 50, 50, 75, 80, 35, 70, 65], [42]),
+  // new Track(9, 0, 40, 6, [80, 65, 70, 65, 80, 55, 90, 60, 85, 50, 50, 75, 80, 35, 70, 65], [42]),
+  new Track(9, 0, 30, 6, [100], [42]),
   // 44 55 = OH
   // 49 57 = crash
+  // new Track(9, 0, 40, 24, [100, 0, 0, 0], [39]),
   // 59 = ride
 ];
 
 for (const track of tracks) {
-  const rowDiv = document.createElement("div");
-  rowDiv.style = "display: flex; flex-direction: row;";
+  const row = document.createElement("tr");
 
   const channelInput = document.createElement("input");
-  channelInput.style = "max-width: 150px;";
   channelInput.type = "number";
   channelInput.min = 1;
   channelInput.max = 16;
+
+  const divInput = document.createElement("input");
+  divInput.type = "number";
+  divInput.min = 1;
+  divInput.max = 128;
 
   const notesInput = document.createElement("input");
   const rythmInput = document.createElement("input");
 
   const volInput = document.createElement("input");
-  volInput.style = "max-width: 150px;";
   volInput.type = "number";
   volInput.min = 0;
   volInput.max = 100;
 
-  rowDiv.appendChild(channelInput);
-  rowDiv.appendChild(notesInput);
-  rowDiv.appendChild(rythmInput);
-  rowDiv.appendChild(volInput);
-  tracksContainer.appendChild(rowDiv);
+  for (const item of [channelInput, divInput, notesInput, rythmInput, volInput]) {
+    const td = document.createElement("td");
+    td.appendChild(item);
+    row.appendChild(td);
+  }
+  tracksContainer.appendChild(row);
 
   track.inputs.channel = channelInput;
   channelInput.onchange = (ev) => {
-    track.channel = ev.target.value;
+    track.channel = parseInt(ev.target.value, 10);
+    track.refreshDisplay();
+  }
+  track.inputs.division = divInput;
+  divInput.onchange = (ev) => {
+    track.division = parseInt(ev.target.value, 10);
     track.refreshDisplay();
   }
   track.inputs.notes = notesInput;
@@ -211,14 +235,14 @@ for (const track of tracks) {
     track.refreshDisplay();
   }
   track.inputs.vol = volInput;
-  volInput.onchange =(ev) => {
-    track.baseVelocity = ev.target.value;
+  volInput.onchange = (ev) => {
+    track.baseVelocity = parseInt(ev.target.value, 10);
     track.refreshDisplay();
   };
   track.refreshDisplay();
 }
 
-
+/*
 const play = () => {
   if (!sendDevice) return;
   for (let track of tracks) {
@@ -226,19 +250,21 @@ const play = () => {
       window.clearTimeout(track.timeout);
       track.playing = false;
     } else {
-      track.timeout = window.setTimeout(() => {track.play()}, track.division);
+      track.timeout = window.setTimeout(() => { track.play() }, track.division);
       track.playing = true;
     }
   }
 };
+*/
 
 const playNote = (port, channel, note, velocity, duration) => {
   /* To send MIDI cc, use:
-        const channel = document.getElementById('sendControlChannel').value - 1;
-        const number = document.getElementById('sendControlNumber').value;
-        const value = document.getElementById('sendControlValue').value;
-        sendDevice.send([0x80 | (3 << 4) | channel, number, value]);
-      */
+    const channel = document.getElementById('sendControlChannel').value - 1;
+    const number = document.getElementById('sendControlNumber').value;
+    const value = document.getElementById('sendControlValue').value;
+    sendDevice.send([0x80 | (3 << 4) | channel, number, value]);
+  */
+  
   port.send([0x80 | (1 << 4) | channel, note, velocity]);
 
   window.setTimeout(() => {
@@ -261,10 +287,13 @@ const updateOutput = (doPlay = false) => {
       } else if (!sendDevice) {
         sendDevice = port;
         if (sendDevice) sendDevice.open();
+        console.log(sendDevice);
       }
+      /*
       if (sendDevice !== null) {
         play(); // Note(sendDevice, channel, note, velocity, 1000);
       }
+      */
     };
     if (
       port.id === favoriteMidiOut &&
@@ -292,8 +321,18 @@ const updateInput = (doPlay = false) => {
       receiveDevice = port;
       port.onmidimessage = (message) => {
         const m = getMIDIMessage(message);
-        if (m.type == "System" && m.channel == "Clock") {
-          console.log("tick");
+        if (m.type === "System" && m.channel === "Stop") {
+          masterClock = 0;
+          for (const track of tracks) {
+            track.position = 0;
+          }
+        } else if (m.type === "System" && m.channel === "Clock") {
+          if (masterClock % 2 === 0) {
+            for (const track of tracks) {
+              track.tick();
+            }
+          }
+          masterClock += 1;
         } else if (m.type === "Note On") {
           console.log(m);
           for (const track of tracks.filter((track) => track.channel === m.channel - 1)) {
