@@ -2,20 +2,12 @@
 
 import { showEvent } from "./logEvents.js";
 
+const favoriteMidiOut = "SH9i9CHH4tcApsEdzLIZbcyjZylnEMXYbysOsbIaeKY=";
+const favoriteMidiIn = "eXNR1/GHU/qmukRRdYDlpwkSKWmFPBL7iTsTvR+ehYM=";
+
 // Notification area to show the connection and error messages.
 const notify = document.getElementById("notify");
-
-const notesInput = document.getElementById("notes-input");
-
-const addNote = (note, elementId, limit = 8) => {
-  const element = document.getElementById(elementId);
-  if (!element) return;
-  element.value += " " + note;
-  const notes = element.value.split(" ");
-  if (notes.length > limit) {
-    element.value = notes.slice(notes.length - limit).join(" ");
-  }
-}
+const tracksContainer = document.getElementById("tracks");
 
 // Log section showing state change messages.
 let midi = null;
@@ -75,7 +67,7 @@ const printPort = (port, list, withAction = null) => {
 };
 
 class Track {
-  constructor(channel, transpose, baseVelocity, division, rythmDefinition) {
+  constructor(channel, transpose, baseVelocity, division, rythmDefinition, notesAvailable) {
     this.channel = channel;
     this.transpose = transpose;
     this.baseVelocity = baseVelocity;
@@ -83,17 +75,41 @@ class Track {
     this.rythmDefinition = rythmDefinition;
     this.position = 0;
     this.playing = false;
-    this.interval = null;
+    this.timeout = null;
     this.lastNotes = [];
+    this.availableNotes = notesAvailable;
+    this.maxNotes = 7;
+    this.inputs = {
+      channel: null,
+      notes: null,
+      rythm: null,
+      vol: null
+    };
+  }
+
+  refreshDisplay() {
+    if (this.inputs.channel) this.inputs.channel.value = this.channel;
+    if (this.inputs.notes) this.inputs.notes.value = this.availableNotes.join(" ");
+    if (this.inputs.rythm) this.inputs.rythm.value = this.rythmDefinition.join(" ");
+    if (this.inputs.vol) this.inputs.vol.value = this.baseVelocity;
+  }
+
+  addNote(note) {
+    this.availableNotes.push(note);
+    if (this.availableNotes.length > this.maxNotes) {
+      this.availableNotes = this.availableNotes.slice(this.availableNotes.length - this.maxNotes);
+    }
+    this.refreshDisplay();
   }
 
   note() {
-    if (!notesInput) return 60;
-    const availableNotes = notesInput.value
+    /*
+    const availableNotes = this.notesInput.value
       .split(" ")
       .map((val) => parseInt(val, 10));
+      */
     const chosenNote =
-      availableNotes[Math.floor(Math.random() * availableNotes.length)];
+      this.availableNotes[Math.floor(Math.random() * this.availableNotes.length)];
     this.lastNotes.push(chosenNote);
     if (this.lastNotes.length >= 5) {
       this.lastNotes.shift();
@@ -105,42 +121,112 @@ class Track {
     const chosenVelocity = this.rythmDefinition[this.position % this.rythmDefinition.length];
     const restThreshold = 100;
     if (chosenVelocity >= restThreshold) {
-      console.log("beat");
-      return chosenVelocity * this.baseVelocity;
+      return chosenVelocity * this.baseVelocity / 100;
     }
     const restProbability = chosenVelocity / restThreshold;
     if (Math.random() >= restProbability) return 0;
-    return chosenVelocity * this.baseVelocity;
+    return chosenVelocity * this.baseVelocity / 100;
+  }
+
+  play() {
+      const note = this.note();
+      const velocity = this.rythm();
+      if (velocity > 0) {
+        playNote(
+          sendDevice,
+          this.channel,
+          note,
+          velocity,
+          this.division - 10
+        );
+      }
+      this.position += 1;
+      if (this.playing) {
+        this.timeout = window.setTimeout(() => {this.play()}, this.division);
+      }
   }
 }
 
 const tracks = [
-  new Track(parseInt(document.getElementById("channel").value, 10) - 1, 12, 0.65, 250, [100, 50, 80, 50]),
-  new Track(1, 0, 0.7, 125, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30])
+  // piano
+  new Track(0, 0, 100, 125, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30], [60, 48]),
+  new Track(1, 0, 0, 125, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30], [60, 48]),
+  new Track(2, 0, 0, 125, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30], [60, 48]),
+  // drums
+  // 36 = kick
+  new Track(9, 0, 65, 250, [100, 0, 0, 0], [36]),
+  // 37 = rim
+  // 39 = clap
+  // 41 = low snare or kick
+  // 38 40 43 45 = snare
+  new Track(9, 0, 65, 250, [0, 0, 100, 0], [38]),
+  // 47 48 50 = tom
+  // 46 51 53 = cymbal
+  // 54 = tambourin
+  // 42 = CH
+  new Track(9, 0, 45, 125, [100], [42]) // [80, 65, 70, 65, 80, 55, 90, 60, 85, 50, 50, 75, 80, 35, 70, 65], [42]),
+  // 44 55 = OH
+  // 49 57 = crash
+  // 59 = ride
 ];
+
+for (const track of tracks) {
+  const rowDiv = document.createElement("div");
+  rowDiv.style = "display: flex; flex-direction: row;";
+
+  const channelInput = document.createElement("input");
+  channelInput.style = "max-width: 150px;";
+  channelInput.type = "number";
+  channelInput.min = 1;
+  channelInput.max = 16;
+
+  const notesInput = document.createElement("input");
+  const rythmInput = document.createElement("input");
+
+  const volInput = document.createElement("input");
+  volInput.style = "max-width: 150px;";
+  volInput.type = "number";
+  volInput.min = 0;
+  volInput.max = 100;
+
+  rowDiv.appendChild(channelInput);
+  rowDiv.appendChild(notesInput);
+  rowDiv.appendChild(rythmInput);
+  rowDiv.appendChild(volInput);
+  tracksContainer.appendChild(rowDiv);
+
+  track.inputs.channel = channelInput;
+  channelInput.onchange = (ev) => {
+    track.channel = ev.target.value;
+    track.refreshDisplay();
+  }
+  track.inputs.notes = notesInput;
+  notesInput.onchange = (ev) => {
+    track.availableNotes = ev.target.value.split(" ").map((val) => parseInt(val, 10));
+    track.refreshDisplay();
+  }
+  track.inputs.rythm = rythmInput;
+  rythmInput.onchange = (ev) => {
+    track.rythmDefinition = ev.target.value.split(" ").map((val) => parseInt(val, 10));
+    track.refreshDisplay();
+  }
+  track.inputs.vol = volInput;
+  volInput.onchange =(ev) => {
+    track.baseVelocity = ev.target.value;
+    track.refreshDisplay();
+  };
+  track.refreshDisplay();
+}
 
 
 const play = () => {
   if (!sendDevice) return;
   for (let track of tracks) {
     if (track.playing) {
-      window.clearInterval(track.interval);
+      window.clearTimeout(track.timeout);
       track.playing = false;
     } else {
-      track.interval = window.setInterval(() => {
-        const note = track.note();
-        const velocity = track.rythm();
-        if (velocity > 0) {
-          playNote(
-            sendDevice,
-            track.channel,
-            note,
-            velocity,
-            track.division - 10
-          );
-        }
-        track.position += 1;
-      }, track.division);
+      track.timeout = window.setTimeout(() => {track.play()}, track.division);
       track.playing = true;
     }
   }
@@ -181,9 +267,7 @@ const updateOutput = (doPlay = false) => {
       }
     };
     if (
-      (port.id ===
-        "6FB73D1DB8F9B18CAF942CFDFEEE36D6181DA17A243E5F69FA52717D79ABA625" ||
-        port.id === "3oswrdB/m2nfnht/pH8UKoqoTB/9TXbp/Fc5CfmxrzA=") &&
+      port.id === favoriteMidiOut &&
       doPlay
     ) {
       midiOutCallback(port);
@@ -211,8 +295,9 @@ const updateInput = (doPlay = false) => {
         if (m.type == "System" && m.channel == "Clock") {
           console.log("tick");
         } else if (m.type === "Note On") {
+          console.log(m);
           for (const track of tracks.filter((track) => track.channel === m.channel - 1)) {
-            addNote(m.data[1], "notes-input", 13);
+            track.addNote(m.data[1]);
           }
         } else if (m.type === "Note Off") {
           // pass
@@ -222,8 +307,8 @@ const updateInput = (doPlay = false) => {
       };
     };
     if (
-      (port.id ===
-        "eXNR1/GHU/qmukRRdYDlpwkSKWmFPBL7iTsTvR+ehYM=" && doPlay)
+      port.id === favoriteMidiIn
+      && doPlay
     ) {
       console.log("bind to input", port);
       inputCallback(port);
