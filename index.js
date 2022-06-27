@@ -18,11 +18,72 @@ let midi = null;
 let sendDevice = null;
 let receiveDevice = null;
 let masterClock = 0;
+const baseDivision = 24; // 1 bar
 
-const musicalContext = {
-  rootNote: 60,
-  baseVelocity: 64,
+const presets = [
+  {
+    id: "custom",
+    label: "Custom",
+    notes: [],
+    rythm: [],
+    octaves: [0],
+    division: 1,
+  },
+  {
+    id: "rootbar",
+    label: "Root note, 1 bar",
+    notes: [0],
+    rythm: [100],
+    octaves: [0],
+    division: 1,
+  },
+];
+
+const scales = {
+  major: [0, 2, 4, 5, 7, 9, 11],
+  minor: [0, 2, 3, 5, 7, 8, 10],
 };
+
+const chords = {
+  triad: [1, 3, 5],
+  seventh: [1, 3, 5, 7],
+};
+
+const getNotes = (notes, octaves) => {
+  const root = document.getElementById("root-note").value;
+  const scale = document.getElementById("scale").value;
+  const chordDegree = document.getElementById("chord-degree").value;
+  const chordType = document.getElementById("chord-type").value;
+  const scaleScheme = scales[scale];
+  const chordScheme = chords[chordType].map(
+    (noteDegree) => scaleScheme[noteDegree - 1]
+  );
+  console.log(
+    notes,
+    octaves,
+    root,
+    scaleScheme,
+    chordDegree,
+    chords[chordType],
+    chordScheme
+  );
+  const chordNotes = [];
+  let i = 0;
+  const lowestNote = root - 120;
+  let note = lowestNote;
+  while (note < 128) {
+    const candidate =
+      lowestNote +
+      chordScheme[i % chordScheme.length] +
+      parseInt(i / chordScheme.length, 10) * 12;
+    if (candidate >= 0 && candidate < 128) chordNotes.push(candidate);
+    note = candidate;
+    i++;
+  }
+  console.log("chord", chordNotes);
+};
+
+getNotes([0, 1, 2, 3, 4], [-2, 0, 1]);
 
 // Disconnect a device and clear the received MIDI message log.
 const resetInput = () => {
@@ -70,7 +131,14 @@ const printPort = (port, list, withAction = null) => {
 };
 
 class Track {
-  constructor(channel, transpose, baseVelocity, division, rythmDefinition, notesAvailable) {
+  constructor(
+    channel,
+    transpose,
+    baseVelocity,
+    division,
+    rythmDefinition,
+    notesAvailable
+  ) {
     this.channel = channel;
     this.transpose = transpose;
     this.baseVelocity = baseVelocity;
@@ -87,24 +155,42 @@ class Track {
       division: null,
       notes: null,
       rythm: null,
-      vol: null
+      vol: null,
+      preset: null,
     };
   }
 
   refreshDisplay() {
     if (this.inputs.channel) this.inputs.channel.value = this.channel;
     if (this.inputs.division) this.inputs.division.value = this.division;
-    if (this.inputs.notes) this.inputs.notes.value = this.availableNotes.join(" ");
-    if (this.inputs.rythm) this.inputs.rythm.value = this.rythmDefinition.join(" ");
+    if (this.inputs.notes)
+      this.inputs.notes.value = this.availableNotes.join(" ");
+    if (this.inputs.rythm)
+      this.inputs.rythm.value = this.rythmDefinition.join(" ");
     if (this.inputs.vol) this.inputs.vol.value = this.baseVelocity;
   }
 
   addNote(note) {
     this.availableNotes.push(note);
     if (this.availableNotes.length > this.maxNotes) {
-      this.availableNotes = this.availableNotes.slice(this.availableNotes.length - this.maxNotes);
+      this.availableNotes = this.availableNotes.slice(
+        this.availableNotes.length - this.maxNotes
+      );
     }
     this.refreshDisplay();
+  }
+
+  setPreset(presetId) {
+    for (const preset of presets) {
+      if (preset.id === presetId) {
+        console.log("Apply", preset, "to", this);
+        this.rythmDefinition = preset.rythm;
+        this.availableNotes = preset.notes;
+        this.division = preset.division * baseDivision;
+        this.refreshDisplay();
+        return;
+      }
+    }
   }
 
   note() {
@@ -114,7 +200,9 @@ class Track {
       .map((val) => parseInt(val, 10));
       */
     const chosenNote =
-      this.availableNotes[Math.floor(Math.random() * this.availableNotes.length)];
+      this.availableNotes[
+        Math.floor(Math.random() * this.availableNotes.length)
+      ];
     this.lastNotes.push(chosenNote);
     if (this.lastNotes.length >= 5) {
       this.lastNotes.shift();
@@ -123,27 +211,22 @@ class Track {
   }
 
   rythm() {
-    const chosenVelocity = this.rythmDefinition[this.position % this.rythmDefinition.length];
+    const chosenVelocity =
+      this.rythmDefinition[this.position % this.rythmDefinition.length];
     const restThreshold = 100;
     if (chosenVelocity >= restThreshold) {
-      return chosenVelocity * this.baseVelocity / 100;
+      return (chosenVelocity * this.baseVelocity) / 100;
     }
     const restProbability = chosenVelocity / restThreshold;
     if (Math.random() >= restProbability) return 0;
-    return chosenVelocity * this.baseVelocity / 100;
+    return (chosenVelocity * this.baseVelocity) / 100;
   }
 
   play() {
     const note = this.note();
     const velocity = this.rythm();
     if (velocity > 0) {
-      playNote(
-        sendDevice,
-        this.channel,
-        note,
-        velocity,
-        250
-      );
+      playNote(sendDevice, this.channel, note, velocity, 250);
     }
     this.position += 1;
   }
@@ -158,12 +241,24 @@ class Track {
 
 const tracks = [
   // Bassline
-  new Track(0, 0, 100, 6, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30],
-    [36, 36, 36, 36, 43, 43, 48]),
+  new Track(
+    0,
+    0,
+    100,
+    6,
+    [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30],
+    [36, 36, 36, 36, 43, 43, 48]
+  ),
   // Lead
-  new Track(1, 0, 80, 12, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30],
-    [60, 60, 60, 63, 65, 67, 67, 68, 70, 72]),
-    /*
+  new Track(
+    1,
+    0,
+    80,
+    12,
+    [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30],
+    [60, 60, 60, 63, 65, 67, 67, 68, 70, 72]
+  ),
+  /*
   new Track(2, 0, 0, 125, [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30], [60, 48]),
   // drums
   */
@@ -207,7 +302,22 @@ for (const track of tracks) {
   volInput.min = 0;
   volInput.max = 100;
 
-  for (const item of [channelInput, divInput, notesInput, rythmInput, volInput]) {
+  const presetSelect = document.createElement("select");
+  for (const preset of presets) {
+    const option = document.createElement("option");
+    option.value = preset.id;
+    option.innerHTML = preset.label;
+    presetSelect.appendChild(option);
+  }
+
+  for (const item of [
+    channelInput,
+    divInput,
+    notesInput,
+    rythmInput,
+    volInput,
+    presetSelect,
+  ]) {
     const td = document.createElement("td");
     td.appendChild(item);
     row.appendChild(td);
@@ -218,26 +328,34 @@ for (const track of tracks) {
   channelInput.onchange = (ev) => {
     track.channel = parseInt(ev.target.value, 10);
     track.refreshDisplay();
-  }
+  };
   track.inputs.division = divInput;
   divInput.onchange = (ev) => {
     track.division = parseInt(ev.target.value, 10);
     track.refreshDisplay();
-  }
+  };
   track.inputs.notes = notesInput;
   notesInput.onchange = (ev) => {
-    track.availableNotes = ev.target.value.split(" ").map((val) => parseInt(val, 10));
+    track.availableNotes = ev.target.value
+      .split(" ")
+      .map((val) => parseInt(val, 10));
     track.refreshDisplay();
-  }
+  };
   track.inputs.rythm = rythmInput;
   rythmInput.onchange = (ev) => {
-    track.rythmDefinition = ev.target.value.split(" ").map((val) => parseInt(val, 10));
+    track.rythmDefinition = ev.target.value
+      .split(" ")
+      .map((val) => parseInt(val, 10));
     track.refreshDisplay();
-  }
+  };
   track.inputs.vol = volInput;
   volInput.onchange = (ev) => {
     track.baseVelocity = parseInt(ev.target.value, 10);
     track.refreshDisplay();
+  };
+  track.inputs.preset = presetSelect;
+  presetSelect.onchange = (ev) => {
+    track.setPreset(ev.target.value);
   };
   track.refreshDisplay();
 }
@@ -264,7 +382,7 @@ const playNote = (port, channel, note, velocity, duration) => {
     const value = document.getElementById('sendControlValue').value;
     sendDevice.send([0x80 | (3 << 4) | channel, number, value]);
   */
-  
+
   port.send([0x80 | (1 << 4) | channel, note, velocity]);
 
   window.setTimeout(() => {
@@ -295,10 +413,7 @@ const updateOutput = (doPlay = false) => {
       }
       */
     };
-    if (
-      port.id === favoriteMidiOut &&
-      doPlay
-    ) {
+    if (port.id === favoriteMidiOut && doPlay) {
       midiOutCallback(port);
     }
     printPort(port, output, midiOutCallback);
@@ -335,7 +450,9 @@ const updateInput = (doPlay = false) => {
           masterClock += 1;
         } else if (m.type === "Note On") {
           console.log(m);
-          for (const track of tracks.filter((track) => track.channel === m.channel - 1)) {
+          for (const track of tracks.filter(
+            (track) => track.channel === m.channel - 1
+          )) {
             track.addNote(m.data[1]);
           }
         } else if (m.type === "Note Off") {
@@ -345,10 +462,7 @@ const updateInput = (doPlay = false) => {
         }
       };
     };
-    if (
-      port.id === favoriteMidiIn
-      && doPlay
-    ) {
+    if (port.id === favoriteMidiIn && doPlay) {
       console.log("bind to input", port);
       inputCallback(port);
     }
