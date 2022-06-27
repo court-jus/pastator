@@ -1,117 +1,116 @@
 <!DOCTYPE html>
 <!-- Kay Sievers, 2022, Released to the public domain -->
 <html lang="en">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-    <title>Web MIDI Test</title>
-    <link rel="stylesheet" href="index.css" />
-  </head>
 
-  <body>
-    <h1>Web MIDI Test</h1>
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+  <title>Web MIDI Test</title>
+  <link rel="stylesheet" href="index.css" />
+</head>
 
-    <div id="notify" class="notify"></div>
-    <table>
-      <tbody>
-        <tr>
-          <td>
-            Root:
-            <input
-              type="number"
-              id="root-note"
-              style="max-width: 50px"
-              min="0"
-              max="127"
-              value="60"
-            />
-          </td>
-          <td>
-            <select id="scale">
-              <option>major</option>
-              <option>minor</option>
-            </select>
-          </td>
-          <td>
-            <input
-              type="number"
-              id="chord-degree"
-              min="1"
-              max="7"
-              value="1"
-              style="max-width: 50px"
-            />
-          </td>
-          <td>
-            <select id="chord-type">
-              <option>triad</option>
-              <option>seventh</option>
-            </select>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <table>
-      <thead>
-        <th>Ch.</th>
-        <th>Div.</th>
-        <th>Notes</th>
-        <th>Rythm</th>
-        <th>Vel.</th>
-        <th>Preset</th>
-      </thead>
-      <tbody id="tracks"></tbody>
-    </table>
+<body>
+  <h1>Web MIDI Test</h1>
 
-    <h2>Choose output port to play</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>&nbsp;</th>
-          <th>ID</th>
-          <th>Manufacturer</th>
-          <th>Name</th>
-          <th>Direction</th>
-          <th>Version</th>
-          <th>Connection</th>
-          <th>State</th>
-        </tr>
-      </thead>
+  <div id="notify" class="notify"></div>
+  <table>
+    <tbody>
+      <tr>
+        <th colspan="2">Scale</th>
+        <th colspan="2">Chord</th>
+      </tr>
+      <tr>
+        <td>
+          Root:
+          <input type="number" id="root-note" style="max-width: 50px" min="0" max="127" value="60" />
+        </td>
+        <td>
+          <select id="scale">
+            <option>major</option>
+            <option>minor</option>
+          </select>
+        </td>
+        <td>
+          <input type="hidden" id="chord-degree" min="1" max="7" value="1" />
+          <button class="chord-degree">1</button>
+          <button class="chord-degree">2</button>
+          <button class="chord-degree">3</button>
+          <button class="chord-degree">4</button>
+          <button class="chord-degree">5</button>
+          <button class="chord-degree">6</button>
+          <button class="chord-degree">7</button>
+        </td>
+        <td>
+          <select id="chord-type">
+            <option>triad</option>
+            <option>seventh</option>
+          </select>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <table>
+    <thead>
+      <th>Ch.</th>
+      <th>Div.</th>
+      <th>Notes</th>
+      <th>Rythm</th>
+      <th>Vel.</th>
+      <th colspan="2">Presets</th>
+    </thead>
+    <tbody id="tracks"></tbody>
+  </table>
 
-      <tbody id="output"></tbody>
-    </table>
+  <h2>Choose output port to play</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>&nbsp;</th>
+        <th>ID</th>
+        <th>Manufacturer</th>
+        <th>Name</th>
+        <th>Direction</th>
+        <th>Version</th>
+        <th>Connection</th>
+        <th>State</th>
+      </tr>
+    </thead>
 
-    <h2>Input Ports</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Is clock</th>
-          <th>ID</th>
-          <th>Manufacturer</th>
-          <th>Name</th>
-          <th>Direction</th>
-          <th>Version</th>
-          <th>Connection</th>
-          <th>State</th>
-        </tr>
-      </thead>
-      <tbody id="input"></tbody>
-    </table>
+    <tbody id="output"></tbody>
+  </table>
 
-    <h2>Events</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Port ID</th>
-          <th>Name</th>
-          <th>Direction</th>
-          <th>Connection</th>
-          <th>State</th>
-          <th>Timestamp</th>
-        </tr>
-      </thead>
-      <tbody id="events"></tbody>
-    </table>
-    <script type="module" lang="text/javascript" src="index.js"></script>
-  </body>
+  <h2>Input Ports</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Is clock</th>
+        <th>ID</th>
+        <th>Manufacturer</th>
+        <th>Name</th>
+        <th>Direction</th>
+        <th>Version</th>
+        <th>Connection</th>
+        <th>State</th>
+      </tr>
+    </thead>
+    <tbody id="input"></tbody>
+  </table>
+
+  <h2>Events</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Port ID</th>
+        <th>Name</th>
+        <th>Direction</th>
+        <th>Connection</th>
+        <th>State</th>
+        <th>Timestamp</th>
+      </tr>
+    </thead>
+    <tbody id="events"></tbody>
+  </table>
+  <script type="module" lang="text/javascript" src="index.js"></script>
+</body>
+
 </html>

@@ -1,3 +1,5 @@
+"use strict";
+
 const events = document.getElementById("events");
 
 // Add a state change message.
