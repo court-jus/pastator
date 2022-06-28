@@ -36,10 +36,14 @@ export class Track {
     this.availableNotes = notesAvailable;
     this.maxNotes = 7;
     this.currentPreset = null;
+    this.playMode = "nil";
+    this.relatedTo = "nil";
     this.inputs = {
       channel: null,
       division: null,
       notes: null,
+      playMode: null,
+      relatedTo: null,
       rythm: null,
       vol: null,
       presetCategory: null,
@@ -52,9 +56,17 @@ export class Track {
     if (this.inputs.division) this.inputs.division.value = this.division;
     if (this.inputs.notes)
       this.inputs.notes.value = this.availableNotes.join(" ");
+    if (this.inputs.playMode) this.inputs.playMode.value = this.playMode;
+    if (this.inputs.relatedTo) this.inputs.relatedTo.value = this.relatedTo;
     if (this.inputs.rythm)
       this.inputs.rythm.value = this.rythmDefinition.join(" ");
     if (this.inputs.vol) this.inputs.vol.value = this.baseVelocity;
+    if (this.inputs.presetCategory) {
+      this.inputs.presetCategory.value = this.currentPreset ? this.currentPreset.category : "nil";
+      const evt = new Event("change");
+      this.inputs.presetCategory.dispatchEvent(evt);
+    }
+    if (this.inputs.preset) this.inputs.preset.value = this.currentPreset ? this.currentPreset.id : "nil";
   }
 
   addNote(note) {
@@ -71,12 +83,14 @@ export class Track {
     this.currentPreset = preset;
     this.rythmDefinition = preset.rythm;
     this.division = preset.division * baseDivision;
+    this.playMode = preset.playMode;
+    this.relatedTo = preset.relatedTo;
     this.updateNotes();
   }
 
   updateNotes() {
     if (this.currentPreset) {
-      this.availableNotes = getNotes(this.currentPreset.notes, this.currentPreset.octaves);
+      this.availableNotes = getNotes(this.currentPreset.notes, this.currentPreset.octaves, this.relatedTo);
       this.refreshDisplay();
     }
   }
@@ -87,15 +101,15 @@ export class Track {
   }
 
   note() {
-    /*
-    const availableNotes = this.notesInput.value
-      .split(" ")
-      .map((val) => parseInt(val, 10));
-      */
-    const chosenNote =
-      this.availableNotes[
-      Math.floor(Math.random() * this.availableNotes.length)
-      ];
+    const chosenNote = (
+      this.playMode === "random"
+        ? this.availableNotes[
+        Math.floor(Math.random() * this.availableNotes.length)
+        ]
+        : this.playMode === "up"
+          ? this.availableNotes[this.position % this.availableNotes.length]
+          : this.availableNotes[0]
+    );
     this.lastNotes.push(chosenNote);
     if (this.lastNotes.length >= 5) {
       this.lastNotes.shift();
@@ -132,15 +146,19 @@ export class Track {
   }
 }
 
-export const PresetTrack = (channel, baseVelocity, preset) => {
+export const PresetTrack = (channel, baseVelocity, categoryId, presetId) => {
+  const preset = presets[categoryId].filter((value) => value.id === presetId)[0];
   const track = new Track(
     channel,
     0,
     baseVelocity,
     preset.division * baseDivision,
     preset.rythm,
-    getNotes(preset.notes, preset.octaves)
+    getNotes(preset.notes, preset.octaves, preset.relatedTo)
   );
-  track.currentPreset = preset;
+  track.setPreset({
+    ...preset,
+    category: categoryId
+  });
   return track;
 }

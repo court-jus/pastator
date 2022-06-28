@@ -19,6 +19,47 @@ export const setUpTracksTable = (tracks) => {
     divInput.max = 128;
 
     const notesInput = document.createElement("input");
+    const playModeInput = document.createElement("select");
+    for (const playMode of [
+      {
+        id: "nil",
+        label: "---"
+      },
+      {
+        id: "up",
+        label: "up"
+      }, {
+        id: "random",
+        label: "random"
+      }
+    ]) {
+      const option = document.createElement("option");
+      option.value = playMode.id;
+      option.innerHTML = playMode.label;
+      playModeInput.appendChild(option);
+    }
+    const relatedToInput = document.createElement("select");
+    for (const relatedTo of [
+      {
+        id: "nil",
+        label: "---"
+      },
+      {
+        id: "scale",
+        label: "scale"
+      }, {
+        id: "chord",
+        label: "chord"
+      }, {
+        id: "static",
+        label: "static"
+      }
+    ]) {
+      const option = document.createElement("option");
+      option.value = relatedTo.id;
+      option.innerHTML = relatedTo.label;
+      relatedToInput.appendChild(option);
+    }
     const rythmInput = document.createElement("input");
 
     const volInput = document.createElement("input");
@@ -27,6 +68,10 @@ export const setUpTracksTable = (tracks) => {
     volInput.max = 100;
 
     const categorySelect = document.createElement("select");
+    const defaultCategoryOption = document.createElement("option");
+    defaultCategoryOption.value = "nil";
+    defaultCategoryOption.innerHTML = "---";
+    categorySelect.appendChild(defaultCategoryOption);
     for (const presetName of Object.keys(presets)) {
       const option = document.createElement("option");
       option.value = presetName;
@@ -34,34 +79,42 @@ export const setUpTracksTable = (tracks) => {
       categorySelect.appendChild(option);
     }
     const presetSelect = document.createElement("select");
-    const option = document.createElement("option");
-    option.value = "nil";
-    option.innerHTML = "---";
-    presetSelect.appendChild(option);
+    const defaultPresetOption = document.createElement("option");
+    defaultPresetOption.value = "nil";
+    defaultPresetOption.innerHTML = "---";
+    presetSelect.appendChild(defaultPresetOption);
     categorySelect.onchange = (ev) => {
       for (let i = presetSelect.options.length - 1; i >= 1; i--) {
         presetSelect.remove(i);
       }
-      const categoryPresets = presets[ev.target.value];
-      for (const preset of categoryPresets) {
-        const option = document.createElement("option");
-        option.value = preset.id;
-        option.innerHTML = preset.label;
-        presetSelect.appendChild(option);
-      }
-      presetSelect.onchange = (ev) => {
+      const categoryId = ev.target.value;
+      const categoryPresets = presets[categoryId];
+      if (categoryPresets) {
         for (const preset of categoryPresets) {
-          if (preset.id === ev.target.value) {
-            track.setPreset(preset);
-          }
+          const option = document.createElement("option");
+          option.value = preset.id;
+          option.innerHTML = preset.label;
+          presetSelect.appendChild(option);
         }
-      };
+        presetSelect.onchange = (ev) => {
+          for (const preset of categoryPresets) {
+            if (preset.id === ev.target.value) {
+              track.setPreset({
+                ...preset,
+                category: categoryId
+              });
+            }
+          }
+        };
+      }
     };
 
     for (const item of [
       channelInput,
       divInput,
       notesInput,
+      playModeInput,
+      relatedToInput,
       rythmInput,
       volInput,
       categorySelect,
@@ -90,6 +143,16 @@ export const setUpTracksTable = (tracks) => {
         .map((val) => parseInt(val, 10));
       track.refreshDisplay();
     };
+    track.inputs.playMode = playModeInput;
+    playModeInput.onchange = (ev) => {
+      track.playMode = ev.target.value;
+      track.refreshDisplay();
+    }
+    track.inputs.relatedTo = relatedToInput;
+    relatedToInput.onchange = (ev) => {
+      track.relatedTo = ev.target.value;
+      track.updateNotes();
+    }
     track.inputs.rythm = rythmInput;
     rythmInput.onchange = (ev) => {
       track.rythmDefinition = ev.target.value
@@ -103,6 +166,7 @@ export const setUpTracksTable = (tracks) => {
       track.refreshDisplay();
     };
     track.inputs.preset = presetSelect;
+    track.inputs.presetCategory = categorySelect;
     track.refreshDisplay();
   }
 
@@ -115,7 +179,7 @@ export const setUpMainControls = (tracks) => {
   const chordType = document.getElementById("chord-type");
   for (const widget of [root, scale, chordDegree, chordType]) {
     widget.onchange = () => {
-      for(const track of tracks) {
+      for (const track of tracks) {
         track.updateNotes();
       }
     };
@@ -123,7 +187,7 @@ export const setUpMainControls = (tracks) => {
   for (const button of document.getElementsByClassName("chord-degree")) {
     button.onclick = () => {
       chordDegree.value = button.innerHTML;
-      chordDegree.onchange();
+      chordDegree.dispatchEvent(new Event("change"));
     }
   }
 };
