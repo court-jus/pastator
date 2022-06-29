@@ -147,12 +147,12 @@ export const setUpTracksTable = (tracks) => {
     playModeInput.onchange = (ev) => {
       track.playMode = ev.target.value;
       track.refreshDisplay();
-    }
+    };
     track.inputs.relatedTo = relatedToInput;
     relatedToInput.onchange = (ev) => {
       track.relatedTo = ev.target.value;
       track.updateNotes();
-    }
+    };
     track.inputs.rythm = rythmInput;
     rythmInput.onchange = (ev) => {
       track.rythmDefinition = ev.target.value
@@ -169,7 +169,6 @@ export const setUpTracksTable = (tracks) => {
     track.inputs.presetCategory = categorySelect;
     track.refreshDisplay();
   }
-
 };
 
 export const setUpMainControls = (tracks) => {
@@ -185,9 +184,18 @@ export const setUpMainControls = (tracks) => {
     };
   }
   for (const button of document.getElementsByClassName("chord-degree")) {
+    if (button.innerHTML === chordDegree.value) {
+      button.className = "chord-degree active";
+    }
     button.onclick = () => {
       chordDegree.value = button.innerHTML;
       chordDegree.dispatchEvent(new Event("change"));
-    }
+      for (const otherbutton of document.getElementsByClassName(
+        "chord-degree"
+      )) {
+        otherbutton.className = "chord-degree";
+      }
+      button.className = "chord-degree active";
+    };
   }
 };
