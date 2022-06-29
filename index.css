@@ -28,6 +28,14 @@ input {
   box-sizing: border-box;
 }
 
+.red-led {
+  color: red;
+}
+
+.green-led {
+  color: greenyellow;
+}
+
 button.active {
   background-color: lightblue;
   border-style: ridge;

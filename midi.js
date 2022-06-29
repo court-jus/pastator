@@ -205,10 +205,16 @@ const updateInput = (doPlay = false, tracks) => {
             track.position = 0;
           }
         } else if (m.type === "System" && m.channel === "Clock") {
-          if (window.masterClock % 2 === 0) {
-            for (const track of tracks) {
-              track.tick();
+          if (window.masterClock % 24 === 0) {
+            const led = document.getElementById("clock-led");
+            if (led.className.indexOf("red") === -1) {
+              led.className = "red-led";
+            } else {
+              led.className = "green-led";
             }
+          }
+          for (const track of tracks) {
+            track.tick();
           }
           window.masterClock += 1;
         } else if (m.type === "Note On") {
@@ -231,7 +237,6 @@ const updateInput = (doPlay = false, tracks) => {
     printPort(port, input, inputCallback);
   }
 };
-
 
 export const connectSystem = (tracks) => {
   navigator
