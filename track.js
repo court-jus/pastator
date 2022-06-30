@@ -3,7 +3,7 @@
 import { getNotes } from "./engine.js";
 import { presets } from "./presets.js";
 
-const baseDivision = 96; // 1 bar
+const baseDivision = 12; // 1 beat
 
 const playNote = (port, channel, note, velocity, duration) => {
   port.send([0x80 | (1 << 4) | channel, note, velocity]);
@@ -12,7 +12,6 @@ const playNote = (port, channel, note, velocity, duration) => {
     port.send([0x80 | (0 << 4) | channel, note, 64]);
   }, duration);
 };
-
 
 export class Track {
   constructor(
@@ -62,11 +61,16 @@ export class Track {
       this.inputs.rythm.value = this.rythmDefinition.join(" ");
     if (this.inputs.vol) this.inputs.vol.value = this.baseVelocity;
     if (this.inputs.presetCategory) {
-      this.inputs.presetCategory.value = this.currentPreset ? this.currentPreset.category : "nil";
+      this.inputs.presetCategory.value = this.currentPreset
+        ? this.currentPreset.category
+        : "nil";
       const evt = new Event("change");
       this.inputs.presetCategory.dispatchEvent(evt);
     }
-    if (this.inputs.preset) this.inputs.preset.value = this.currentPreset ? this.currentPreset.id : "nil";
+    if (this.inputs.preset)
+      this.inputs.preset.value = this.currentPreset
+        ? this.currentPreset.id
+        : "nil";
   }
 
   addNote(note) {
@@ -90,7 +94,11 @@ export class Track {
 
   updateNotes() {
     if (this.currentPreset) {
-      this.availableNotes = getNotes(this.currentPreset.notes, this.currentPreset.octaves, this.relatedTo);
+      this.availableNotes = getNotes(
+        this.currentPreset.notes,
+        this.currentPreset.octaves,
+        this.relatedTo
+      );
       this.refreshDisplay();
     }
   }
@@ -101,15 +109,14 @@ export class Track {
   }
 
   note() {
-    const chosenNote = (
+    const chosenNote =
       this.playMode === "random"
         ? this.availableNotes[
-        Math.floor(Math.random() * this.availableNotes.length)
-        ]
+            Math.floor(Math.random() * this.availableNotes.length)
+          ]
         : this.playMode === "up"
-          ? this.availableNotes[this.position % this.availableNotes.length]
-          : this.availableNotes[0]
-    );
+        ? this.availableNotes[this.position % this.availableNotes.length]
+        : this.availableNotes[0];
     this.lastNotes.push(chosenNote);
     if (this.lastNotes.length >= 5) {
       this.lastNotes.shift();
@@ -133,7 +140,7 @@ export class Track {
     const note = this.note();
     const velocity = this.rythm();
     if (velocity > 0 && this.device !== null) {
-      playNote(this.device, this.channel, note, velocity, 250);
+      playNote(this.device, this.channel, note, velocity, this.division * 80);
     }
     this.position += 1;
   }
@@ -147,7 +154,9 @@ export class Track {
 }
 
 export const PresetTrack = (channel, baseVelocity, categoryId, presetId) => {
-  const preset = presets[categoryId].filter((value) => value.id === presetId)[0];
+  const preset = presets[categoryId].filter(
+    (value) => value.id === presetId
+  )[0];
   const track = new Track(
     channel,
     0,
@@ -158,7 +167,7 @@ export const PresetTrack = (channel, baseVelocity, categoryId, presetId) => {
   );
   track.setPreset({
     ...preset,
-    category: categoryId
+    category: categoryId,
   });
   return track;
-}
+};

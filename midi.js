@@ -2,11 +2,14 @@
 
 import { showEvent } from "./logEvents.js";
 
-
 // const favoriteMidiOut = "SH9i9CHH4tcApsEdzLIZbcyjZylnEMXYbysOsbIaeKY=";
-const favoriteMidiOut = "lxicVCpkG7/gBf3veX6RVSWQPhV1parZ+R7ToYgcOYM=";
+// const favoriteMidiOut = "lxicVCpkG7/gBf3veX6RVSWQPhV1parZ+R7ToYgcOYM=";
+const favoriteMidiOut =
+  "EF0175D9E6EAF9C86E4F5D21DD66763D01936E793EB2ADFB7696CDF892206C61";
 // const favoriteMidiIn = "eXNR1/GHU/qmukRRdYDlpwkSKWmFPBL7iTsTvR+ehYM=";
-const favoriteMidiIn = "3oswrdB/m2nfnht/pH8UKoqoTB/9TXbp/Fc5CfmxrzA=";
+// const favoriteMidiIn = "3oswrdB/m2nfnht/pH8UKoqoTB/9TXbp/Fc5CfmxrzA=";
+const favoriteMidiIn =
+  "09C5322899595E883634448B79CC5A957D62738A17CF1A251142220CCD40BA05";
 
 // Print the properties of a MIDI port.
 const printPort = (port, list, withAction = null) => {
@@ -186,7 +189,8 @@ const updateOutput = (doPlay = false, tracks) => {
 const updateInput = (doPlay = false, tracks) => {
   const input = document.getElementById("input");
 
-  if (window.receiveDevice && window.receiveDevice.state == "disconnected") resetInput();
+  if (window.receiveDevice && window.receiveDevice.state == "disconnected")
+    resetInput();
 
   while (input.firstChild) input.firstChild.remove();
 
