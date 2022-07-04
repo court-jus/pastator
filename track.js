@@ -5,25 +5,20 @@ import { presets } from "./presets.js";
 
 const baseDivision = 12; // 1 beat
 
-const playNote = (port, channel, note, velocity, duration) => {
+const playNote = (port, channel, note, velocity) => {
   port.send([0x80 | (1 << 4) | channel, note, velocity]);
+};
 
-  window.setTimeout(() => {
-    port.send([0x80 | (0 << 4) | channel, note, 64]);
-  }, duration);
+const stopNote = (port, channel, note) => {
+  port.send([0x80 | (0 << 4) | channel, note, 64]);
 };
 
 export class Track {
-  constructor(
-    channel,
-    transpose,
-    baseVelocity,
-    division,
-    rythmDefinition,
-    notesAvailable
-  ) {
+  constructor(channel, transpose, gate, baseVelocity, division, rythmDefinition, notesAvailable) {
     this.device = null;
     this.channel = channel;
+    this.currentNote = null;
+    this.gate = gate;
     this.transpose = transpose;
     this.baseVelocity = baseVelocity;
     this.division = division;
@@ -137,29 +132,44 @@ export class Track {
   }
 
   play() {
+    if (this.device === null) return;
     const note = this.note();
     const velocity = this.rythm();
-    if (velocity > 0 && this.device !== null) {
-      playNote(this.device, this.channel, note, velocity, this.division * 80);
+    if (velocity > 0) {
+      this.currentNote = note;
+      playNote(this.device, this.channel, note, velocity);
     }
     this.position += 1;
+  }
+
+  stop() {
+    if (this.device === null) return;
+    if (this.currentNote === null) return;
+    stopNote(this.device, this.channel, this.currentNote);
+    this.currentNote = null;
   }
 
   tick() {
     if (!this.playing) return;
     if (window.masterClock % this.division === 0) {
+      if (this.gate === 100) this.stop();
       this.play();
+    } else if (this.gate < 100) {
+      const pcLow = ((window.masterClock % this.division) / this.division) * 100;
+      const pcHigh = (((window.masterClock + 1) % this.division) / this.division) * 100;
+      if (pcLow < this.gate && pcHigh >= this.gate) {
+        this.stop();
+      }
     }
   }
 }
 
-export const PresetTrack = (channel, baseVelocity, categoryId, presetId) => {
-  const preset = presets[categoryId].filter(
-    (value) => value.id === presetId
-  )[0];
+export const PresetTrack = (channel, baseVelocity, gate, categoryId, presetId) => {
+  const preset = presets[categoryId].filter((value) => value.id === presetId)[0];
   const track = new Track(
     channel,
     0,
+    gate,
     baseVelocity,
     preset.division * baseDivision,
     preset.rythm,
