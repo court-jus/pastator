@@ -5,7 +5,7 @@ import { showEvent } from "./logEvents.js";
 // const favoriteMidiOut = "SH9i9CHH4tcApsEdzLIZbcyjZylnEMXYbysOsbIaeKY=";
 // const favoriteMidiOut = "lxicVCpkG7/gBf3veX6RVSWQPhV1parZ+R7ToYgcOYM=";
 const favoriteMidiOut =
-  "EF0175D9E6EAF9C86E4F5D21DD66763D01936E793EB2ADFB7696CDF892206C61";
+  "BA8A5FFA99BA4618BEFB70459B91B957F64E2025650886F0A212156C0B0C3271";
 // const favoriteMidiIn = "eXNR1/GHU/qmukRRdYDlpwkSKWmFPBL7iTsTvR+ehYM=";
 // const favoriteMidiIn = "3oswrdB/m2nfnht/pH8UKoqoTB/9TXbp/Fc5CfmxrzA=";
 const favoriteMidiIn =

@@ -2,10 +2,15 @@
 
 import { Track, PresetTrack } from "./track.js";
 
+const strum = PresetTrack(0, 55, 100, "pad", "widechord");
+strum.strumDelay = 50;
+
 export const tracks = [
+  // Chords ("pad")
+  strum,
   // Bassline
-  PresetTrack(0, 55, "bass", "groovy"),
   /*
+  PresetTrack(0, 55, 65, "bass", "widechord"),
   // Lead
   PresetTrack(1, 60, "lead", "varponderatedscale"),
   // drums

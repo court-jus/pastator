@@ -1,7 +1,6 @@
 "use strict";
 import { presets } from "./presets.js";
 
-
 export const setUpTracksTable = (tracks) => {
   const tracksContainer = document.getElementById("tracks");
 
@@ -23,15 +22,20 @@ export const setUpTracksTable = (tracks) => {
     for (const playMode of [
       {
         id: "nil",
-        label: "---"
+        label: "---",
       },
       {
         id: "up",
-        label: "up"
-      }, {
+        label: "up",
+      },
+      {
         id: "random",
-        label: "random"
-      }
+        label: "random",
+      },
+      {
+        id: "atonce",
+        label: "All at once",
+      },
     ]) {
       const option = document.createElement("option");
       option.value = playMode.id;
@@ -42,18 +46,20 @@ export const setUpTracksTable = (tracks) => {
     for (const relatedTo of [
       {
         id: "nil",
-        label: "---"
+        label: "---",
       },
       {
         id: "scale",
-        label: "scale"
-      }, {
+        label: "scale",
+      },
+      {
         id: "chord",
-        label: "chord"
-      }, {
+        label: "chord",
+      },
+      {
         id: "static",
-        label: "static"
-      }
+        label: "static",
+      },
     ]) {
       const option = document.createElement("option");
       option.value = relatedTo.id;
@@ -101,7 +107,7 @@ export const setUpTracksTable = (tracks) => {
             if (preset.id === ev.target.value) {
               track.setPreset({
                 ...preset,
-                category: categoryId
+                category: categoryId,
               });
             }
           }
@@ -138,9 +144,7 @@ export const setUpTracksTable = (tracks) => {
     };
     track.inputs.notes = notesInput;
     notesInput.onchange = (ev) => {
-      track.availableNotes = ev.target.value
-        .split(" ")
-        .map((val) => parseInt(val, 10));
+      track.availableNotes = ev.target.value.split(" ").map((val) => parseInt(val, 10));
       track.refreshDisplay();
     };
     track.inputs.playMode = playModeInput;
@@ -155,9 +159,7 @@ export const setUpTracksTable = (tracks) => {
     };
     track.inputs.rythm = rythmInput;
     rythmInput.onchange = (ev) => {
-      track.rythmDefinition = ev.target.value
-        .split(" ")
-        .map((val) => parseInt(val, 10));
+      track.rythmDefinition = ev.target.value.split(" ").map((val) => parseInt(val, 10));
       track.refreshDisplay();
     };
     track.inputs.vol = volInput;
@@ -190,9 +192,7 @@ export const setUpMainControls = (tracks) => {
     button.onclick = () => {
       chordDegree.value = button.innerHTML;
       chordDegree.dispatchEvent(new Event("change"));
-      for (const otherbutton of document.getElementsByClassName(
-        "chord-degree"
-      )) {
+      for (const otherbutton of document.getElementsByClassName("chord-degree")) {
         otherbutton.className = "chord-degree";
       }
       button.className = "chord-degree active";

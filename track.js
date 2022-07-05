@@ -5,7 +5,13 @@ import { presets } from "./presets.js";
 
 const baseDivision = 12; // 1 beat
 
-const playNote = (port, channel, note, velocity) => {
+const playNote = (port, channel, note, velocity, delay = 0) => {
+  if (delay) {
+    window.setTimeout(() => {
+      playNote(port, channel, note, velocity);
+    }, delay);
+    return;
+  }
   port.send([0x80 | (1 << 4) | channel, note, velocity]);
 };
 
@@ -17,11 +23,12 @@ export class Track {
   constructor(channel, transpose, gate, baseVelocity, division, rythmDefinition, notesAvailable) {
     this.device = null;
     this.channel = channel;
-    this.currentNote = null;
+    this.currentNote = [];
     this.gate = gate;
     this.transpose = transpose;
     this.baseVelocity = baseVelocity;
     this.division = division;
+    this.strumDelay = 0;
     this.rythmDefinition = rythmDefinition;
     this.position = 0;
     this.playing = false;
@@ -48,32 +55,23 @@ export class Track {
   refreshDisplay() {
     if (this.inputs.channel) this.inputs.channel.value = this.channel;
     if (this.inputs.division) this.inputs.division.value = this.division;
-    if (this.inputs.notes)
-      this.inputs.notes.value = this.availableNotes.join(" ");
+    if (this.inputs.notes) this.inputs.notes.value = this.availableNotes.join(" ");
     if (this.inputs.playMode) this.inputs.playMode.value = this.playMode;
     if (this.inputs.relatedTo) this.inputs.relatedTo.value = this.relatedTo;
-    if (this.inputs.rythm)
-      this.inputs.rythm.value = this.rythmDefinition.join(" ");
+    if (this.inputs.rythm) this.inputs.rythm.value = this.rythmDefinition.join(" ");
     if (this.inputs.vol) this.inputs.vol.value = this.baseVelocity;
     if (this.inputs.presetCategory) {
-      this.inputs.presetCategory.value = this.currentPreset
-        ? this.currentPreset.category
-        : "nil";
+      this.inputs.presetCategory.value = this.currentPreset ? this.currentPreset.category : "nil";
       const evt = new Event("change");
       this.inputs.presetCategory.dispatchEvent(evt);
     }
-    if (this.inputs.preset)
-      this.inputs.preset.value = this.currentPreset
-        ? this.currentPreset.id
-        : "nil";
+    if (this.inputs.preset) this.inputs.preset.value = this.currentPreset ? this.currentPreset.id : "nil";
   }
 
   addNote(note) {
     this.availableNotes.push(note);
     if (this.availableNotes.length > this.maxNotes) {
-      this.availableNotes = this.availableNotes.slice(
-        this.availableNotes.length - this.maxNotes
-      );
+      this.availableNotes = this.availableNotes.slice(this.availableNotes.length - this.maxNotes);
     }
     this.refreshDisplay();
   }
@@ -89,11 +87,7 @@ export class Track {
 
   updateNotes() {
     if (this.currentPreset) {
-      this.availableNotes = getNotes(
-        this.currentPreset.notes,
-        this.currentPreset.octaves,
-        this.relatedTo
-      );
+      this.availableNotes = getNotes(this.currentPreset.notes, this.currentPreset.octaves, this.relatedTo);
       this.refreshDisplay();
     }
   }
@@ -106,9 +100,7 @@ export class Track {
   note() {
     const chosenNote =
       this.playMode === "random"
-        ? this.availableNotes[
-            Math.floor(Math.random() * this.availableNotes.length)
-          ]
+        ? this.availableNotes[Math.floor(Math.random() * this.availableNotes.length)]
         : this.playMode === "up"
         ? this.availableNotes[this.position % this.availableNotes.length]
         : this.availableNotes[0];
@@ -120,8 +112,7 @@ export class Track {
   }
 
   rythm() {
-    const chosenVelocity =
-      this.rythmDefinition[this.position % this.rythmDefinition.length];
+    const chosenVelocity = this.rythmDefinition[this.position % this.rythmDefinition.length];
     const restThreshold = 100;
     if (chosenVelocity >= restThreshold) {
       return (chosenVelocity * this.baseVelocity) / 100;
@@ -133,20 +124,26 @@ export class Track {
 
   play() {
     if (this.device === null) return;
-    const note = this.note();
+    const playedNotes = this.playMode === "atonce" ? this.availableNotes : this.note();
     const velocity = this.rythm();
     if (velocity > 0) {
-      this.currentNote = note;
-      playNote(this.device, this.channel, note, velocity);
+      let strumDelay = 0;
+      for (const note of playedNotes) {
+        this.currentNote.push(note);
+        playNote(this.device, this.channel, note, velocity, strumDelay);
+        strumDelay += this.strumDelay;
+      }
     }
     this.position += 1;
   }
 
   stop() {
     if (this.device === null) return;
-    if (this.currentNote === null) return;
-    stopNote(this.device, this.channel, this.currentNote);
-    this.currentNote = null;
+    if (this.currentNote.length === 0) return;
+    for (const currentNote of this.currentNote) {
+      stopNote(this.device, this.channel, currentNote);
+    }
+    this.currentNote = [];
   }
 
   tick() {
