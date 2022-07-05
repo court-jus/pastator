@@ -37,7 +37,7 @@ export const presets = {
     {
       id: "widechord",
       label: "Wide chord, low",
-      notes: [0, 1, 2, 3],
+      notes: [0, 1, 2, 3, 4, 5],
       rythm: [100],
       octaves: [-1],
       division: 4,
@@ -117,5 +117,11 @@ export const scales = {
 
 export const chords = {
   triad: [1, 3, 5],
+  power: [1, 5, 8],
+  sus2: [1, 2, 5],
+  sus4: [1, 4, 5],
+  sixth: [1, 3, 5, 6],
   seventh: [1, 3, 5, 7],
+  ninth: [1, 3, 5, 7, 9],
+  eleventh: [1, 3, 5, 7, 9, 11],
 };
