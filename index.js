@@ -2,6 +2,7 @@
 
 import { connectSystem } from "./midi.js";
 import { tracks } from "./song1.js";
+import { sequencer } from "./sequencer.js";
 import { setUpTracksTable, setUpMainControls } from "./gui.js";
 
 // Notification area to show the connection and error messages.
@@ -14,14 +15,13 @@ window.sendDevice = null;
 window.receiveDevice = null;
 window.masterClock = 0;
 
-
 console.log("Starting up...");
 if (navigator.requestMIDIAccess) {
   console.log("Setting up GUI");
   setUpMainControls(tracks);
   setUpTracksTable(tracks);
   console.log("Requesting MIDI Access");
-  connectSystem(tracks);
+  connectSystem(tracks, sequencer);
 } else {
   console.error("No WebMIDI support found");
   notify.innerText = "No WebMIDI support found";

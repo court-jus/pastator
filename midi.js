@@ -4,24 +4,14 @@ import { showEvent } from "./logEvents.js";
 
 // const favoriteMidiOut = "SH9i9CHH4tcApsEdzLIZbcyjZylnEMXYbysOsbIaeKY=";
 // const favoriteMidiOut = "lxicVCpkG7/gBf3veX6RVSWQPhV1parZ+R7ToYgcOYM=";
-const favoriteMidiOut =
-  "BA8A5FFA99BA4618BEFB70459B91B957F64E2025650886F0A212156C0B0C3271";
+const favoriteMidiOut = "BA8A5FFA99BA4618BEFB70459B91B957F64E2025650886F0A212156C0B0C3271";
 // const favoriteMidiIn = "eXNR1/GHU/qmukRRdYDlpwkSKWmFPBL7iTsTvR+ehYM=";
 // const favoriteMidiIn = "3oswrdB/m2nfnht/pH8UKoqoTB/9TXbp/Fc5CfmxrzA=";
-const favoriteMidiIn =
-  "09C5322899595E883634448B79CC5A957D62738A17CF1A251142220CCD40BA05";
+const favoriteMidiIn = "09C5322899595E883634448B79CC5A957D62738A17CF1A251142220CCD40BA05";
 
 // Print the properties of a MIDI port.
 const printPort = (port, list, withAction = null) => {
-  const fields = [
-    "id",
-    "manufacturer",
-    "name",
-    "type",
-    "version",
-    "connection",
-    "state",
-  ];
+  const fields = ["id", "manufacturer", "name", "type", "version", "connection", "state"];
 
   const row = document.createElement("tr");
   if (withAction) {
@@ -38,8 +28,7 @@ const printPort = (port, list, withAction = null) => {
     const e = document.createElement("td");
 
     e.innerText = port[field];
-    if (field == "connection" && port[field] == "open")
-      e.style.backgroundColor = "hsl(120, 50%, 85%)";
+    if (field == "connection" && port[field] == "open") e.style.backgroundColor = "hsl(120, 50%, 85%)";
 
     row.appendChild(e);
   }
@@ -186,11 +175,10 @@ const updateOutput = (doPlay = false, tracks) => {
   }
 };
 
-const updateInput = (doPlay = false, tracks) => {
+const updateInput = (doPlay = false, tracks, sequencer = null) => {
   const input = document.getElementById("input");
 
-  if (window.receiveDevice && window.receiveDevice.state == "disconnected")
-    resetInput();
+  if (window.receiveDevice && window.receiveDevice.state == "disconnected") resetInput();
 
   while (input.firstChild) input.firstChild.remove();
 
@@ -220,12 +208,11 @@ const updateInput = (doPlay = false, tracks) => {
           for (const track of tracks) {
             track.tick();
           }
+          if (sequencer) sequencer.tick();
           window.masterClock += 1;
         } else if (m.type === "Note On") {
           console.debug(m);
-          for (const track of tracks.filter(
-            (track) => track.channel === m.channel - 1
-          )) {
+          for (const track of tracks.filter((track) => track.channel === m.channel - 1)) {
             track.addNote(m.data[1]);
           }
         } else if (m.type === "Note Off") {
@@ -242,7 +229,7 @@ const updateInput = (doPlay = false, tracks) => {
   }
 };
 
-export const connectSystem = (tracks) => {
+export const connectSystem = (tracks, sequencer) => {
   navigator
     .requestMIDIAccess({
       sysex: true,
@@ -261,12 +248,11 @@ export const connectSystem = (tracks) => {
 
         resetInput();
 
-        updateInput(true, tracks);
+        updateInput(true, tracks, sequencer);
         updateOutput(true, tracks);
       },
       (error) => {
-        notify.innerHTML =
-          "Unable to access MIDI devices: <i>" + error + "</i>";
+        notify.innerHTML = "Unable to access MIDI devices: <i>" + error + "</i>";
         notify.style.backgroundColor = "hsl(0, 50%, 85%)";
       }
     );

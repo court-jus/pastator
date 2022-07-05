@@ -190,12 +190,19 @@ export const setUpMainControls = (tracks) => {
       button.className = "chord-degree active";
     }
     button.onclick = () => {
-      chordDegree.value = button.innerHTML;
-      chordDegree.dispatchEvent(new Event("change"));
-      for (const otherbutton of document.getElementsByClassName("chord-degree")) {
-        otherbutton.className = "chord-degree";
-      }
-      button.className = "chord-degree active";
+      setChord(button.innerHTML);
     };
+  }
+};
+
+export const setChord = (value) => {
+  const chordDegree = document.getElementById("chord-degree");
+  chordDegree.value = value;
+  chordDegree.dispatchEvent(new Event("change"));
+  for (const otherbutton of document.getElementsByClassName("chord-degree")) {
+    otherbutton.className = "chord-degree";
+    if (otherbutton.innerHTML === value.toString()) {
+      otherbutton.className = "chord-degree active";
+    }
   }
 };
