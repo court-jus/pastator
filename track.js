@@ -124,7 +124,7 @@ export class Track {
 
   play() {
     if (this.device === null) return;
-    const playedNotes = this.playMode === "atonce" ? this.availableNotes : this.note();
+    const playedNotes = this.playMode === "atonce" ? this.availableNotes : [this.note()];
     const velocity = this.rythm();
     if (velocity > 0) {
       let strumDelay = 0;
