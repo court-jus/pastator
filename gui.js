@@ -193,6 +193,12 @@ export const setUpMainControls = (tracks) => {
       setChord(button.innerHTML);
     };
   }
+  const panic = document.getElementById("panic");
+  panic.onclick = () => {
+    for(const track of tracks) {
+      track.stop();
+    }
+  }
 };
 
 export const setChord = (value) => {

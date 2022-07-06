@@ -42,3 +42,8 @@ button.active {
   border-width: 2px;
   border-radius: 3px;
 }
+
+.row {
+  display: flex;
+  flex-direction: row;
+}
