@@ -163,9 +163,7 @@ const updateOutput = (doPlay = false, tracks) => {
       } else if (!sendDevice) {
         sendDevice = port;
         if (sendDevice) sendDevice.open();
-        for (const track of tracks) {
-          track.setDevice(sendDevice);
-        }
+        tracks.setDevice(sendDevice);
       }
     };
     if (port.id === favoriteMidiOut && doPlay) {
@@ -193,9 +191,7 @@ const updateInput = (doPlay = false, tracks, sequencer = null) => {
         const m = getMIDIMessage(message);
         if (m.type === "System" && m.channel === "Stop") {
           window.masterClock = 0;
-          for (const track of tracks) {
-            track.position = 0;
-          }
+          tracks.fullStop();
         } else if (m.type === "System" && m.channel === "Clock") {
           if (window.masterClock % 24 === 0) {
             const led = document.getElementById("clock-led");
@@ -205,16 +201,11 @@ const updateInput = (doPlay = false, tracks, sequencer = null) => {
               led.className = "led green-led";
             }
           }
-          for (const track of tracks) {
-            track.tick();
-          }
+          tracks.tick();
           if (sequencer) sequencer.tick();
           window.masterClock += 1;
         } else if (m.type === "Note On") {
-          console.debug(m);
-          for (const track of tracks.filter((track) => track.channel === m.channel - 1)) {
-            track.addNote(m.data[1]);
-          }
+          tracks.addNote(m.channel - 1, m.data[1]);
         } else if (m.type === "Note Off") {
           // pass
         } else {
@@ -229,7 +220,8 @@ const updateInput = (doPlay = false, tracks, sequencer = null) => {
   }
 };
 
-export const connectSystem = (tracks, sequencer) => {
+export const connectSystem = (sequencer) => {
+  const tracks = sequencer.tracks;
   navigator
     .requestMIDIAccess({
       sysex: true,

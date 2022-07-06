@@ -1,11 +1,10 @@
 "use strict";
 import { presets } from "./presets.js";
-import { sequencer } from "./sequencer.js";
 
 export const setUpTracksTable = (tracks) => {
   const tracksContainer = document.getElementById("tracks");
 
-  for (const track of tracks) {
+  for (const track of tracks.tracks) {
     const row = document.createElement("tr");
 
     const channelInput = document.createElement("input");
@@ -174,16 +173,15 @@ export const setUpTracksTable = (tracks) => {
   }
 };
 
-export const setUpMainControls = (tracks) => {
+export const setUpMainControls = (sequencer) => {
+  const tracks = sequencer.tracks;
   const root = document.getElementById("root-note");
   const scale = document.getElementById("scale");
   const chordDegree = document.getElementById("chord-degree");
   const chordType = document.getElementById("chord-type");
   for (const widget of [root, scale, chordDegree, chordType]) {
     widget.onchange = () => {
-      for (const track of tracks) {
-        track.updateNotes();
-      }
+      tracks.updateNotes();
     };
   }
   for (const button of document.getElementsByClassName("chord-degree")) {
@@ -191,47 +189,27 @@ export const setUpMainControls = (tracks) => {
       button.className = "chord-degree active";
     }
     button.onclick = () => {
-      setChord(button.innerHTML);
+      tracks.setChord(button.innerHTML);
     };
   }
 
   document.getElementById("play-btn").onclick = () => {
     sequencer.startPlay();
-    for (const track of tracks) {
-      track.startPlay();
-    }
+    tracks.startPlay();
   }
 
   document.getElementById("pause-btn").onclick = () => {
     sequencer.pausePlay();
-    for (const track of tracks) {
-      track.pausePlay();
-    }
+    tracks.pausePlay();
   }
 
   document.getElementById("stop-btn").onclick = () => {
     sequencer.stop();
-    for (const track of tracks) {
-      track.fullStop();
-    }
+    tracks.fullStop();
   }
   document.getElementById("panic-btn").onclick = () => {
     sequencer.stop();
-    for (const track of tracks) {
-      track.fullStop(true);
-    }
+    tracks.fullStop(true);
   }
 
-};
-
-export const setChord = (value) => {
-  const chordDegree = document.getElementById("chord-degree");
-  chordDegree.value = value;
-  chordDegree.dispatchEvent(new Event("change"));
-  for (const otherbutton of document.getElementsByClassName("chord-degree")) {
-    otherbutton.className = "chord-degree";
-    if (otherbutton.innerHTML === value.toString()) {
-      otherbutton.className = "chord-degree active";
-    }
-  }
 };

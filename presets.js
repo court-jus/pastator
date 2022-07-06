@@ -40,7 +40,7 @@ export const presets = {
       notes: [0, 1, 2, 3, 4, 5],
       rythm: [100],
       octaves: [-1],
-      division: 4,
+      division: 0,
       playMode: "atonce",
       relatedTo: "chord",
     },

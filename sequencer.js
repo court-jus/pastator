@@ -1,9 +1,8 @@
-import { setChord } from "./gui.js";
-
 const sequencerInput = document.getElementById("chord-sequence");
 
-class Sequencer {
-  constructor() {
+export class Sequencer {
+  constructor(tracks) {
+    this.tracks = tracks;
     this.position = 0;
     this.playing = true;
     this.progression = [1, 1, 4, 6, 3, 5];
@@ -43,7 +42,7 @@ class Sequencer {
   setCurrentChord() {
     const newChord = this.progression[this.position % this.progression.length]
     if (newChord) {
-      setChord(newChord);
+      this.tracks.setChord(newChord);
     }
   }
 
@@ -55,5 +54,3 @@ class Sequencer {
     }
   }
 }
-
-export const sequencer = new Sequencer();

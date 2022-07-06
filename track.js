@@ -102,8 +102,8 @@ export class Track {
       this.playMode === "random"
         ? this.availableNotes[Math.floor(Math.random() * this.availableNotes.length)]
         : this.playMode === "up"
-        ? this.availableNotes[this.position % this.availableNotes.length]
-        : this.availableNotes[0];
+          ? this.availableNotes[this.position % this.availableNotes.length]
+          : this.availableNotes[0];
     this.lastNotes.push(chosenNote);
     if (this.lastNotes.length >= 5) {
       this.lastNotes.shift();
@@ -154,14 +154,14 @@ export class Track {
     this.playing = false;
   }
 
-  fullStop(panic=false) {
+  fullStop(panic = false) {
     if (panic) this.stop();
     this.playing = false;
     this.position = 0;
   }
 
   tick() {
-    if (!this.playing) return;
+    if (!this.playing || this.division === 0) return;
     if (window.masterClock % this.division === 0) {
       if (this.gate === 100) this.stop();
       this.play();
@@ -172,6 +172,11 @@ export class Track {
         this.stop();
       }
     }
+  }
+
+  applyChord() {
+    this.stop();
+    this.play();
   }
 }
 
@@ -192,3 +197,39 @@ export const PresetTrack = (channel, baseVelocity, gate, categoryId, presetId) =
   });
   return track;
 };
+
+export class Tracks {
+  constructor(tracks) {
+    this.tracks = tracks;
+  }
+
+  tick() { for (const track of this.tracks) { track.tick(); } }
+  updateNotes() { for (const track of this.tracks) { track.updateNotes(); } }
+  startPlay() { for (const track of this.tracks) { track.startPlay(); } }
+  pausePlay() { for (const track of this.tracks) { track.pausePlay(); } }
+  fullStop(panic = false) { for (const track of this.tracks) { track.fullStop(panic); } }
+  setDevice(device) { for (const track of this.tracks) { track.setDevice(device); } }
+
+  addNote(channel, note) {
+    for (const track of tracks.filter((track) => track.channel === channel)) {
+      track.addNote(note);
+    }
+  }
+
+  setChord(value) {
+    const chordDegree = document.getElementById("chord-degree");
+    chordDegree.value = value;
+    chordDegree.dispatchEvent(new Event("change"));
+    for (const otherbutton of document.getElementsByClassName("chord-degree")) {
+      otherbutton.className = "chord-degree";
+      if (otherbutton.innerHTML === value.toString()) {
+        otherbutton.className = "chord-degree active";
+      }
+    }
+    for (const track of this.tracks) {
+      if (track.division === 0) {
+        track.applyChord();
+      }
+    }
+  }
+}
