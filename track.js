@@ -94,7 +94,7 @@ export class Track {
 
   setDevice(device) {
     this.device = device;
-    this.playing = true;
+    this.startPlay();
   }
 
   note() {
@@ -144,6 +144,20 @@ export class Track {
       stopNote(this.device, this.channel, currentNote);
     }
     this.currentNote = [];
+  }
+
+  startPlay() {
+    this.playing = true;
+  }
+
+  pausePlay() {
+    this.playing = false;
+  }
+
+  fullStop(panic=false) {
+    if (panic) this.stop();
+    this.playing = false;
+    this.position = 0;
   }
 
   tick() {

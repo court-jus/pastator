@@ -1,5 +1,6 @@
 "use strict";
 import { presets } from "./presets.js";
+import { sequencer } from "./sequencer.js";
 
 export const setUpTracksTable = (tracks) => {
   const tracksContainer = document.getElementById("tracks");
@@ -193,12 +194,34 @@ export const setUpMainControls = (tracks) => {
       setChord(button.innerHTML);
     };
   }
-  const panic = document.getElementById("panic");
-  panic.onclick = () => {
-    for(const track of tracks) {
-      track.stop();
+
+  document.getElementById("play-btn").onclick = () => {
+    sequencer.startPlay();
+    for (const track of tracks) {
+      track.startPlay();
     }
   }
+
+  document.getElementById("pause-btn").onclick = () => {
+    sequencer.pausePlay();
+    for (const track of tracks) {
+      track.pausePlay();
+    }
+  }
+
+  document.getElementById("stop-btn").onclick = () => {
+    sequencer.stop();
+    for (const track of tracks) {
+      track.fullStop();
+    }
+  }
+  document.getElementById("panic-btn").onclick = () => {
+    sequencer.stop();
+    for (const track of tracks) {
+      track.fullStop(true);
+    }
+  }
+
 };
 
 export const setChord = (value) => {

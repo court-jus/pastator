@@ -54,4 +54,5 @@ button.active {
 .row {
   display: flex;
   flex-direction: row;
+  justify-content: space-evenly;
 }
