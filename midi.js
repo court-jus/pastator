@@ -200,9 +200,9 @@ const updateInput = (doPlay = false, tracks, sequencer = null) => {
           if (window.masterClock % 24 === 0) {
             const led = document.getElementById("clock-led");
             if (led.className.indexOf("red") === -1) {
-              led.className = "red-led";
+              led.className = "led red-led";
             } else {
-              led.className = "green-led";
+              led.className = "led green-led";
             }
           }
           for (const track of tracks) {

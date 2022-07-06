@@ -28,12 +28,20 @@ input {
   box-sizing: border-box;
 }
 
+.led {
+  border-radius: 50%;
+  width: 0.75em;
+  height: 0.75em;
+  vertical-align: middle;
+  display: inline-block;
+}
+
 .red-led {
-  color: red;
+  background-color: red;
 }
 
 .green-led {
-  color: greenyellow;
+  background-color: greenyellow;
 }
 
 button.active {
