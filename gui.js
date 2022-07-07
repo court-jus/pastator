@@ -7,6 +7,12 @@ export const setUpTracksTable = (tracks) => {
   for (const track of tracks.tracks) {
     const row = document.createElement("tr");
 
+    const playBtn = document.createElement("button");
+    playBtn.innerHTML = "P";
+    playBtn.onclick = () => {
+      track.togglePlay();
+    };
+
     const channelInput = document.createElement("input");
     channelInput.type = "number";
     channelInput.min = 1;
@@ -116,6 +122,7 @@ export const setUpTracksTable = (tracks) => {
     };
 
     for (const item of [
+      playBtn,
       channelInput,
       divInput,
       notesInput,
@@ -196,20 +203,19 @@ export const setUpMainControls = (sequencer) => {
   document.getElementById("play-btn").onclick = () => {
     sequencer.startPlay();
     tracks.startPlay();
-  }
+  };
 
   document.getElementById("pause-btn").onclick = () => {
     sequencer.pausePlay();
     tracks.pausePlay();
-  }
+  };
 
   document.getElementById("stop-btn").onclick = () => {
     sequencer.stop();
     tracks.fullStop();
-  }
+  };
   document.getElementById("panic-btn").onclick = () => {
     sequencer.stop();
     tracks.fullStop(true);
-  }
-
+  };
 };

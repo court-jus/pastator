@@ -94,7 +94,6 @@ export class Track {
 
   setDevice(device) {
     this.device = device;
-    this.startPlay();
   }
 
   note() {
@@ -154,6 +153,14 @@ export class Track {
     this.playing = false;
   }
 
+  togglePlay() {
+    if (this.playing) {
+      this.fullStop(true);
+    } else {
+      this.startPlay();
+    }
+  }
+
   fullStop(panic = false) {
     if (panic) this.stop();
     this.playing = false;
@@ -175,6 +182,7 @@ export class Track {
   }
 
   applyChord() {
+    if (!this.playing) return;
     this.stop();
     this.play();
   }
@@ -207,6 +215,7 @@ export class Tracks {
   updateNotes() { for (const track of this.tracks) { track.updateNotes(); } }
   startPlay() { for (const track of this.tracks) { track.startPlay(); } }
   pausePlay() { for (const track of this.tracks) { track.pausePlay(); } }
+  togglePlay() { for (const track of this.tracks) { track.togglePlay(); } }
   fullStop(panic = false) { for (const track of this.tracks) { track.fullStop(panic); } }
   setDevice(device) { for (const track of this.tracks) { track.setDevice(device); } }
 

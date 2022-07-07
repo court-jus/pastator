@@ -4,7 +4,7 @@ export class Sequencer {
   constructor(tracks) {
     this.tracks = tracks;
     this.position = 0;
-    this.playing = true;
+    this.playing = false;
     this.progression = [1, 1, 4, 6, 3, 5];
     this.inputs = {
       progression: sequencerInput
