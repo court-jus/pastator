@@ -108,6 +108,8 @@ export const setUpTracksTable = (tracks) => {
           option.innerHTML = preset.label;
           presetSelect.appendChild(option);
         }
+        presetSelect.value =
+          track.currentPreset && track.currentPreset.category === categoryId ? track.currentPreset.id : "nil";
         presetSelect.onchange = (ev) => {
           for (const preset of categoryPresets) {
             if (preset.id === ev.target.value) {
@@ -120,6 +122,9 @@ export const setUpTracksTable = (tracks) => {
         };
       }
     };
+    categorySelect.value = track.currentPreset ? track.currentPreset.category : "nil";
+    const evt = new Event("change");
+    categorySelect.dispatchEvent(evt);
 
     for (const item of [
       playBtn,

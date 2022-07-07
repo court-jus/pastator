@@ -60,12 +60,6 @@ export class Track {
     if (this.inputs.relatedTo) this.inputs.relatedTo.value = this.relatedTo;
     if (this.inputs.rythm) this.inputs.rythm.value = this.rythmDefinition.join(" ");
     if (this.inputs.vol) this.inputs.vol.value = this.baseVelocity;
-    if (this.inputs.presetCategory) {
-      this.inputs.presetCategory.value = this.currentPreset ? this.currentPreset.category : "nil";
-      const evt = new Event("change");
-      this.inputs.presetCategory.dispatchEvent(evt);
-    }
-    if (this.inputs.preset) this.inputs.preset.value = this.currentPreset ? this.currentPreset.id : "nil";
   }
 
   addNote(note) {
