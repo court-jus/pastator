@@ -28,6 +28,8 @@ export class Track {
     this.transpose = transpose;
     this.baseVelocity = baseVelocity;
     this.division = division;
+    this.gravityCenter = null;
+    this.gravityStrength = null;
     this.strumDelay = 0;
     this.rythmDefinition = rythmDefinition;
     this.position = 0;
@@ -42,6 +44,8 @@ export class Track {
     this.inputs = {
       channel: null,
       division: null,
+      gravityCenter: null,
+      gravityStrength: null,
       notes: null,
       playMode: null,
       relatedTo: null,
@@ -55,6 +59,8 @@ export class Track {
   refreshDisplay() {
     if (this.inputs.channel) this.inputs.channel.value = this.channel;
     if (this.inputs.division) this.inputs.division.value = this.division;
+    if (this.inputs.gravityCenter) this.inputs.gravityCenter.value = this.gravityCenter;
+    if (this.inputs.gravityStrength) this.inputs.gravityStrength.value = this.gravityStrength;
     if (this.inputs.notes) this.inputs.notes.value = this.availableNotes.join(" ");
     if (this.inputs.playMode) this.inputs.playMode.value = this.playMode;
     if (this.inputs.relatedTo) this.inputs.relatedTo.value = this.relatedTo;
@@ -80,10 +86,29 @@ export class Track {
   }
 
   updateNotes() {
-    if (this.currentPreset) {
-      this.availableNotes = getNotes(this.currentPreset.notes, this.currentPreset.octaves, this.relatedTo);
+    const candidateNotes = this.currentPreset
+      ? getNotes(this.currentPreset.notes, this.currentPreset.octaves, this.relatedTo)
+      : this.availableNotes;
+    if (this.gravityCenter === null || this.gravityStrength === null) {
+      this.availableNotes = candidateNotes;
       this.refreshDisplay();
+      return;
     }
+    const margin = Math.trunc((140 - this.gravityStrength) / 2);
+    const lowerBound = Math.max(this.gravityCenter - margin, 0);
+    const higherBound = Math.min(this.gravityCenter + margin, 127);
+    this.availableNotes = candidateNotes.map((note) => {
+      if (note < lowerBound) {
+        const transp = lowerBound - note;
+        return note + transp + (12 - (transp % 12));
+      }
+      if (note > higherBound) {
+        const transp = note - higherBound;
+        return note - transp - (12 - (transp % 12));
+      }
+      return note;
+    });
+    this.refreshDisplay();
   }
 
   setDevice(device) {
@@ -199,40 +224,3 @@ export const PresetTrack = (channel, baseVelocity, gate, categoryId, presetId) =
   });
   return track;
 };
-
-export class Tracks {
-  constructor(tracks) {
-    this.tracks = tracks;
-  }
-
-  tick() { for (const track of this.tracks) { track.tick(); } }
-  updateNotes() { for (const track of this.tracks) { track.updateNotes(); } }
-  startPlay() { for (const track of this.tracks) { track.startPlay(); } }
-  pausePlay() { for (const track of this.tracks) { track.pausePlay(); } }
-  togglePlay() { for (const track of this.tracks) { track.togglePlay(); } }
-  fullStop(panic = false) { for (const track of this.tracks) { track.fullStop(panic); } }
-  setDevice(device) { for (const track of this.tracks) { track.setDevice(device); } }
-
-  addNote(channel, note) {
-    for (const track of tracks.filter((track) => track.channel === channel)) {
-      track.addNote(note);
-    }
-  }
-
-  setChord(value) {
-    const chordDegree = document.getElementById("chord-degree");
-    chordDegree.value = value;
-    chordDegree.dispatchEvent(new Event("change"));
-    for (const otherbutton of document.getElementsByClassName("chord-degree")) {
-      otherbutton.className = "chord-degree";
-      if (otherbutton.innerHTML === value.toString()) {
-        otherbutton.className = "chord-degree active";
-      }
-    }
-    for (const track of this.tracks) {
-      if (track.division === 0) {
-        track.applyChord();
-      }
-    }
-  }
-}

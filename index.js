@@ -4,7 +4,7 @@ import { connectSystem } from "./midi.js";
 import { tracks as song } from "./song1.js";
 import { Sequencer } from "./sequencer.js";
 import { setUpTracksTable, setUpMainControls } from "./gui.js";
-import { Tracks } from "./track.js";
+import { Tracks } from "./tracks.js";
 
 // Notification area to show the connection and error messages.
 const notify = document.getElementById("notify");

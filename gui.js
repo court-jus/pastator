@@ -23,6 +23,16 @@ export const setUpTracksTable = (tracks) => {
     divInput.min = 1;
     divInput.max = 128;
 
+    const gravityCenterInput = document.createElement("input");
+    gravityCenterInput.type = "number";
+    gravityCenterInput.min = 1;
+    gravityCenterInput.max = 128;
+
+    const gravityStrengthInput = document.createElement("input");
+    gravityStrengthInput.type = "number";
+    gravityStrengthInput.min = 1;
+    gravityStrengthInput.max = 128;
+
     const notesInput = document.createElement("input");
     const playModeInput = document.createElement("select");
     for (const playMode of [
@@ -130,6 +140,8 @@ export const setUpTracksTable = (tracks) => {
       playBtn,
       channelInput,
       divInput,
+      gravityCenterInput,
+      gravityStrengthInput,
       notesInput,
       playModeInput,
       relatedToInput,
@@ -153,6 +165,16 @@ export const setUpTracksTable = (tracks) => {
     divInput.onchange = (ev) => {
       track.division = parseInt(ev.target.value, 10);
       track.refreshDisplay();
+    };
+    track.inputs.gravityCenter = gravityCenterInput;
+    gravityCenterInput.onchange = (ev) => {
+      track.gravityCenter = parseInt(ev.target.value, 10);
+      track.updateNotes();
+    };
+    track.inputs.gravityStrength = gravityStrengthInput;
+    gravityStrengthInput.onchange = (ev) => {
+      track.gravityStrength = parseInt(ev.target.value, 10);
+      track.updateNotes();
     };
     track.inputs.notes = notesInput;
     notesInput.onchange = (ev) => {
