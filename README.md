@@ -2,7 +2,7 @@
 
 ## Try it
 
-[Demo](https://court-jus.github.io/webaudio-playground/)
+[Demo](https://court-jus.github.io/pastator/)
 
 ## What it is
 
