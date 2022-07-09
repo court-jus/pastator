@@ -2,9 +2,21 @@ export class Song {
   constructor(preferences, tracks) {
     this.preferences = preferences;
     this.tracks = tracks;
+    this.root = null;
+    this.scale = null;
+    this.chord = null;
+    this.chordType = null;
     for (const track of this.tracks) {
+      track.song = this;
       track.applyPreferences(preferences);
     }
+  }
+
+  getValuesFromGui() {
+    this.root = parseInt(document.getElementById("root-note").value, 10);
+    this.scale = document.getElementById("scale").value;
+    this.chord = parseInt(document.getElementById("chord-degree").value, 10) - 1;
+    this.chordType = document.getElementById("chord-type").value;
   }
 
   tick() {
@@ -13,6 +25,7 @@ export class Song {
     }
   }
   updateNotes() {
+    this.getValuesFromGui();
     for (const track of this.tracks) {
       track.updateNotes();
     }
@@ -64,5 +77,14 @@ export class Song {
         track.applyChord();
       }
     }
+  }
+
+  save() {
+    return {
+      root: this.root,
+      scale: this.scale,
+      chord: this.chord,
+      chordType: this.chordType,
+    };
   }
 }

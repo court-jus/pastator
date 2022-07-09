@@ -210,6 +210,7 @@ export const setUpTracksTable = (song) => {
 
 export const setUpMainControls = (sequencer) => {
   const song = sequencer.song;
+  song.updateNotes();
   const root = document.getElementById("root-note");
   const scale = document.getElementById("scale");
   const chordDegree = document.getElementById("chord-degree");

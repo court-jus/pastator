@@ -35,6 +35,7 @@ export class Track {
     this.position = 0;
     this.playing = false;
     this.timeout = null;
+    this.song = null;
     this.lastNotes = [];
     this.availableNotes = notesAvailable;
     this.maxNotes = 7;
@@ -90,8 +91,9 @@ export class Track {
   }
 
   updateNotes() {
+    if (!this.song) return;
     const candidateNotes = this.currentPreset
-      ? getNotes(this.currentPreset.notes, this.currentPreset.octaves, this.relatedTo)
+      ? getNotes(this.song, this.currentPreset.notes, this.currentPreset.octaves, this.relatedTo)
       : this.availableNotes;
     if (this.gravityCenter === null || this.gravityStrength === null) {
       this.availableNotes = candidateNotes;
@@ -220,7 +222,7 @@ export const PresetTrack = (channel, baseVelocity, gate, categoryId, presetId) =
     baseVelocity,
     preset.division * baseDivision,
     preset.rythm,
-    getNotes(preset.notes, preset.octaves, preset.relatedTo)
+    []
   );
   track.setPreset({
     ...preset,
