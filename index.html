@@ -18,6 +18,15 @@
       <button id="stop-btn">Stop</button>
       <button id="panic-btn">Panic</button>
     </div>
+    <div class="row">
+      <div>Preferences</div>
+      <button id="dump-prefs-btn">Dump</button>
+      <button id="clear-prefs-btn">Clear</button>
+      <form enctype="multipart/form-data" style="display: flex; align-items: center">
+        <label for="prefs-file-input">Import</label>
+        <input id="prefs-file-input" type="file" accept="application/json" name="preferences" />
+      </form>
+    </div>
     <div>
       <input type="text" id="chord-sequence" />
     </div>

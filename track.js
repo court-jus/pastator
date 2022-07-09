@@ -56,6 +56,10 @@ export class Track {
     };
   }
 
+  applyPreferences(preferences) {
+    preferences.playing ? this.startPlay() : this.pausePlay();
+  }
+
   refreshDisplay() {
     if (this.inputs.channel) this.inputs.channel.value = this.channel;
     if (this.inputs.division) this.inputs.division.value = this.division;
@@ -120,8 +124,8 @@ export class Track {
       this.playMode === "random"
         ? this.availableNotes[Math.floor(Math.random() * this.availableNotes.length)]
         : this.playMode === "up"
-          ? this.availableNotes[this.position % this.availableNotes.length]
-          : this.availableNotes[0];
+        ? this.availableNotes[this.position % this.availableNotes.length]
+        : this.availableNotes[0];
     this.lastNotes.push(chosenNote);
     if (this.lastNotes.length >= 5) {
       this.lastNotes.shift();

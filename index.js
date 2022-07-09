@@ -5,9 +5,12 @@ import { tracks as song } from "./song1.js";
 import { Sequencer } from "./sequencer.js";
 import { setUpTracksTable, setUpMainControls } from "./gui.js";
 import { Tracks } from "./tracks.js";
+import { loadPreferences, savePreferences } from "./prefs.js";
 
 // Notification area to show the connection and error messages.
 const notify = document.getElementById("notify");
+const preferences = loadPreferences();
+console.log("Loaded prefs", preferences);
 
 window.midi = null;
 
@@ -19,12 +22,15 @@ window.masterClock = 0;
 console.log("Starting up...");
 if (navigator.requestMIDIAccess) {
   console.log("Setting up GUI");
-  const tracks = new Tracks(song);
-  const sequencer = new Sequencer(tracks);
+  const tracks = new Tracks(preferences, song);
+  const sequencer = new Sequencer(preferences, tracks);
   setUpMainControls(sequencer);
   setUpTracksTable(tracks);
   console.log("Requesting MIDI Access");
-  connectSystem(sequencer);
+  connectSystem(preferences, sequencer);
+  window.setInterval(() => {
+    savePreferences(preferences);
+  }, 10000);
 } else {
   console.error("No WebMIDI support found");
   notify.innerText = "No WebMIDI support found";

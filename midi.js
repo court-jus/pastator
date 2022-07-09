@@ -1,13 +1,7 @@
 "use strict";
 
 import { showEvent } from "./logEvents.js";
-
-// const favoriteMidiOut = "SH9i9CHH4tcApsEdzLIZbcyjZylnEMXYbysOsbIaeKY=";
-// const favoriteMidiOut = "lxicVCpkG7/gBf3veX6RVSWQPhV1parZ+R7ToYgcOYM=";
-const favoriteMidiOut = "BA8A5FFA99BA4618BEFB70459B91B957F64E2025650886F0A212156C0B0C3271";
-// const favoriteMidiIn = "eXNR1/GHU/qmukRRdYDlpwkSKWmFPBL7iTsTvR+ehYM=";
-// const favoriteMidiIn = "3oswrdB/m2nfnht/pH8UKoqoTB/9TXbp/Fc5CfmxrzA=";
-const favoriteMidiIn = "09C5322899595E883634448B79CC5A957D62738A17CF1A251142220CCD40BA05";
+import { savePreferences } from "./prefs.js";
 
 // Print the properties of a MIDI port.
 const printPort = (port, list, withAction = null) => {
@@ -149,7 +143,7 @@ const resetInput = () => {
 };
 
 // Update the list of ports.
-const updateOutput = (doPlay = false, tracks) => {
+const updateOutput = (preferences, doPlay = false, tracks) => {
   const output = document.getElementById("output");
 
   if (sendDevice && sendDevice.state == "disconnected") sendDevice = null;
@@ -165,15 +159,16 @@ const updateOutput = (doPlay = false, tracks) => {
         if (sendDevice) sendDevice.open();
         tracks.setDevice(sendDevice);
       }
+      savePreferences(preferences);
     };
-    if (port.id === favoriteMidiOut && doPlay) {
+    if (port.id === preferences.midiOut && doPlay) {
       midiOutCallback(port);
     }
     printPort(port, output, midiOutCallback);
   }
 };
 
-const updateInput = (doPlay = false, tracks, sequencer = null) => {
+const updateInput = (preferences, doPlay = false, tracks, sequencer = null) => {
   const input = document.getElementById("input");
 
   if (window.receiveDevice && window.receiveDevice.state == "disconnected") resetInput();
@@ -187,6 +182,7 @@ const updateInput = (doPlay = false, tracks, sequencer = null) => {
       if (!port) return;
 
       window.receiveDevice = port;
+      savePreferences(preferences);
       port.onmidimessage = (message) => {
         const m = getMIDIMessage(message);
         if (m.type === "System" && m.channel === "Stop") {
@@ -213,14 +209,14 @@ const updateInput = (doPlay = false, tracks, sequencer = null) => {
         }
       };
     };
-    if (port.id === favoriteMidiIn && doPlay) {
+    if (port.id === preferences.midiIn && doPlay) {
       inputCallback(port);
     }
     printPort(port, input, inputCallback);
   }
 };
 
-export const connectSystem = (sequencer) => {
+export const connectSystem = (preferences, sequencer) => {
   const tracks = sequencer.tracks;
   navigator
     .requestMIDIAccess({
@@ -234,14 +230,14 @@ export const connectSystem = (sequencer) => {
 
         window.midi.onstatechange = (event) => {
           showEvent(event);
-          updateInput(false, tracks);
-          updateOutput(false, tracks);
+          updateInput(preferences, false, tracks);
+          updateOutput(preferences, false, tracks);
         };
 
         resetInput();
 
-        updateInput(true, tracks, sequencer);
-        updateOutput(true, tracks);
+        updateInput(preferences, true, tracks, sequencer);
+        updateOutput(preferences, true, tracks);
       },
       (error) => {
         notify.innerHTML = "Unable to access MIDI devices: <i>" + error + "</i>";

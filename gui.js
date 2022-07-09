@@ -1,4 +1,5 @@
 "use strict";
+import { clearPreferences, dumpPreferences, handlePrefsFileSelected } from "./prefs.js";
 import { presets } from "./presets.js";
 
 export const setUpTracksTable = (tracks) => {
@@ -245,4 +246,12 @@ export const setUpMainControls = (sequencer) => {
     sequencer.stop();
     tracks.fullStop(true);
   };
+
+  document.getElementById("dump-prefs-btn").onclick = () => {
+    dumpPreferences();
+  };
+  document.getElementById("clear-prefs-btn").onclick = () => {
+    clearPreferences();
+  };
+  document.getElementById("prefs-file-input").addEventListener("change", handlePrefsFileSelected, false);
 };

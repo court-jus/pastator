@@ -1,15 +1,47 @@
 export class Tracks {
-  constructor(tracks) {
+  constructor(preferences, tracks) {
+    this.preferences = preferences;
     this.tracks = tracks;
+    for (const track of this.tracks) {
+      track.applyPreferences(preferences);
+    }
   }
 
-  tick() { for (const track of this.tracks) { track.tick(); } }
-  updateNotes() { for (const track of this.tracks) { track.updateNotes(); } }
-  startPlay() { for (const track of this.tracks) { track.startPlay(); } }
-  pausePlay() { for (const track of this.tracks) { track.pausePlay(); } }
-  togglePlay() { for (const track of this.tracks) { track.togglePlay(); } }
-  fullStop(panic = false) { for (const track of this.tracks) { track.fullStop(panic); } }
-  setDevice(device) { for (const track of this.tracks) { track.setDevice(device); } }
+  tick() {
+    for (const track of this.tracks) {
+      track.tick();
+    }
+  }
+  updateNotes() {
+    for (const track of this.tracks) {
+      track.updateNotes();
+    }
+  }
+  startPlay() {
+    for (const track of this.tracks) {
+      track.startPlay();
+    }
+  }
+  pausePlay() {
+    for (const track of this.tracks) {
+      track.pausePlay();
+    }
+  }
+  togglePlay() {
+    for (const track of this.tracks) {
+      track.togglePlay();
+    }
+  }
+  fullStop(panic = false) {
+    for (const track of this.tracks) {
+      track.fullStop(panic);
+    }
+  }
+  setDevice(device) {
+    for (const track of this.tracks) {
+      track.setDevice(device);
+    }
+  }
 
   addNote(channel, note) {
     for (const track of tracks.filter((track) => track.channel === channel)) {

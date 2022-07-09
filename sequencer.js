@@ -1,13 +1,14 @@
 const sequencerInput = document.getElementById("chord-sequence");
 
 export class Sequencer {
-  constructor(tracks) {
+  constructor(preferences, tracks) {
+    this.preferences = preferences;
     this.tracks = tracks;
     this.position = 0;
-    this.playing = false;
+    this.playing = preferences.playing;
     this.progression = [1, 1, 4, 6, 3, 5];
     this.inputs = {
-      progression: sequencerInput
+      progression: sequencerInput,
     };
     this.setupGui();
     this.refreshDisplay();
@@ -40,7 +41,7 @@ export class Sequencer {
   }
 
   setCurrentChord() {
-    const newChord = this.progression[this.position % this.progression.length]
+    const newChord = this.progression[this.position % this.progression.length];
     if (newChord) {
       this.tracks.setChord(newChord);
     }
