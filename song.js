@@ -1,4 +1,4 @@
-export class Tracks {
+export class Song {
   constructor(preferences, tracks) {
     this.preferences = preferences;
     this.tracks = tracks;
@@ -44,7 +44,7 @@ export class Tracks {
   }
 
   addNote(channel, note) {
-    for (const track of tracks.filter((track) => track.channel === channel)) {
+    for (const track of this.tracks.filter((track) => track.channel === channel)) {
       track.addNote(note);
     }
   }

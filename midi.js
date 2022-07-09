@@ -143,7 +143,7 @@ const resetInput = () => {
 };
 
 // Update the list of ports.
-const updateOutput = (preferences, doPlay = false, tracks) => {
+const updateOutput = (preferences, doPlay = false, song) => {
   const output = document.getElementById("output");
 
   if (sendDevice && sendDevice.state == "disconnected") sendDevice = null;
@@ -157,7 +157,7 @@ const updateOutput = (preferences, doPlay = false, tracks) => {
       } else if (!sendDevice) {
         sendDevice = port;
         if (sendDevice) sendDevice.open();
-        tracks.setDevice(sendDevice);
+        song.setDevice(sendDevice);
       }
       savePreferences(preferences);
     };
@@ -168,7 +168,7 @@ const updateOutput = (preferences, doPlay = false, tracks) => {
   }
 };
 
-const updateInput = (preferences, doPlay = false, tracks, sequencer = null) => {
+const updateInput = (preferences, doPlay = false, song, sequencer = null) => {
   const input = document.getElementById("input");
 
   if (window.receiveDevice && window.receiveDevice.state == "disconnected") resetInput();
@@ -187,7 +187,7 @@ const updateInput = (preferences, doPlay = false, tracks, sequencer = null) => {
         const m = getMIDIMessage(message);
         if (m.type === "System" && m.channel === "Stop") {
           window.masterClock = 0;
-          tracks.fullStop();
+          song.fullStop();
         } else if (m.type === "System" && m.channel === "Clock") {
           if (window.masterClock % 24 === 0) {
             const led = document.getElementById("clock-led");
@@ -197,11 +197,11 @@ const updateInput = (preferences, doPlay = false, tracks, sequencer = null) => {
               led.className = "led green-led";
             }
           }
-          tracks.tick();
+          song.tick();
           if (sequencer) sequencer.tick();
           window.masterClock += 1;
         } else if (m.type === "Note On") {
-          tracks.addNote(m.channel - 1, m.data[1]);
+          song.addNote(m.channel - 1, m.data[1]);
         } else if (m.type === "Note Off") {
           // pass
         } else {
@@ -217,7 +217,7 @@ const updateInput = (preferences, doPlay = false, tracks, sequencer = null) => {
 };
 
 export const connectSystem = (preferences, sequencer) => {
-  const tracks = sequencer.tracks;
+  const song = sequencer.song;
   navigator
     .requestMIDIAccess({
       sysex: true,
@@ -230,14 +230,14 @@ export const connectSystem = (preferences, sequencer) => {
 
         window.midi.onstatechange = (event) => {
           showEvent(event);
-          updateInput(preferences, false, tracks);
-          updateOutput(preferences, false, tracks);
+          updateInput(preferences, false, song);
+          updateOutput(preferences, false, song);
         };
 
         resetInput();
 
-        updateInput(preferences, true, tracks, sequencer);
-        updateOutput(preferences, true, tracks);
+        updateInput(preferences, true, song, sequencer);
+        updateOutput(preferences, true, song);
       },
       (error) => {
         notify.innerHTML = "Unable to access MIDI devices: <i>" + error + "</i>";

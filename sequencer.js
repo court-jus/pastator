@@ -1,9 +1,9 @@
 const sequencerInput = document.getElementById("chord-sequence");
 
 export class Sequencer {
-  constructor(preferences, tracks) {
+  constructor(preferences, song) {
     this.preferences = preferences;
-    this.tracks = tracks;
+    this.song = song;
     this.position = 0;
     this.playing = preferences.seqPlaying;
     this.progression = [1, 1, 4, 6, 3, 5];
@@ -43,7 +43,7 @@ export class Sequencer {
   setCurrentChord() {
     const newChord = this.progression[this.position % this.progression.length];
     if (newChord) {
-      this.tracks.setChord(newChord);
+      this.song.setChord(newChord);
     }
   }
 

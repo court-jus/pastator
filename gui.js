@@ -2,10 +2,10 @@
 import { clearPreferences, dumpPreferences, handlePrefsFileSelected } from "./prefs.js";
 import { presets } from "./presets.js";
 
-export const setUpTracksTable = (tracks) => {
+export const setUpTracksTable = (song) => {
   const tracksContainer = document.getElementById("tracks");
 
-  for (const track of tracks.tracks) {
+  for (const track of song.tracks) {
     const row = document.createElement("tr");
 
     const playBtn = document.createElement("button");
@@ -209,14 +209,14 @@ export const setUpTracksTable = (tracks) => {
 };
 
 export const setUpMainControls = (sequencer) => {
-  const tracks = sequencer.tracks;
+  const song = sequencer.song;
   const root = document.getElementById("root-note");
   const scale = document.getElementById("scale");
   const chordDegree = document.getElementById("chord-degree");
   const chordType = document.getElementById("chord-type");
   for (const widget of [root, scale, chordDegree, chordType]) {
     widget.onchange = () => {
-      tracks.updateNotes();
+      song.updateNotes();
     };
   }
   for (const button of document.getElementsByClassName("chord-degree")) {
@@ -224,7 +224,7 @@ export const setUpMainControls = (sequencer) => {
       button.className = "chord-degree active";
     }
     button.onclick = () => {
-      tracks.setChord(button.innerHTML);
+      song.setChord(button.innerHTML);
     };
   }
 
@@ -241,21 +241,21 @@ export const setUpMainControls = (sequencer) => {
   };
   document.getElementById("play-btn").onclick = () => {
     sequencer.startPlay();
-    tracks.startPlay();
+    song.startPlay();
   };
 
   document.getElementById("pause-btn").onclick = () => {
     sequencer.pausePlay();
-    tracks.pausePlay();
+    song.pausePlay();
   };
 
   document.getElementById("stop-btn").onclick = () => {
     sequencer.stop();
-    tracks.fullStop();
+    song.fullStop();
   };
   document.getElementById("panic-btn").onclick = () => {
     sequencer.stop();
-    tracks.fullStop(true);
+    song.fullStop(true);
   };
 
   document.getElementById("dump-prefs-btn").onclick = () => {

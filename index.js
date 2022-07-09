@@ -1,10 +1,10 @@
 "use strict";
 
 import { connectSystem } from "./midi.js";
-import { tracks as song } from "./song1.js";
+import { tracks } from "./song1.js";
 import { Sequencer } from "./sequencer.js";
 import { setUpTracksTable, setUpMainControls } from "./gui.js";
-import { Tracks } from "./tracks.js";
+import { Song } from "./song.js";
 import { loadPreferences, savePreferences } from "./prefs.js";
 
 // Notification area to show the connection and error messages.
@@ -22,10 +22,10 @@ window.masterClock = 0;
 console.log("Starting up...");
 if (navigator.requestMIDIAccess) {
   console.log("Setting up GUI");
-  const tracks = new Tracks(preferences, song);
-  const sequencer = new Sequencer(preferences, tracks);
+  const song = new Song(preferences, tracks);
+  const sequencer = new Sequencer(preferences, song);
   setUpMainControls(sequencer);
-  setUpTracksTable(tracks);
+  setUpTracksTable(song);
   console.log("Requesting MIDI Access");
   connectSystem(preferences, sequencer);
   window.setInterval(() => {
