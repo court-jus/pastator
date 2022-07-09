@@ -228,6 +228,17 @@ export const setUpMainControls = (sequencer) => {
     };
   }
 
+  document.getElementById("seqplay-btn").onclick = () => {
+    sequencer.startPlay();
+  };
+
+  document.getElementById("seqpause-btn").onclick = () => {
+    sequencer.pausePlay();
+  };
+
+  document.getElementById("seqstop-btn").onclick = () => {
+    sequencer.stop();
+  };
   document.getElementById("play-btn").onclick = () => {
     sequencer.startPlay();
     tracks.startPlay();

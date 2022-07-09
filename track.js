@@ -57,7 +57,7 @@ export class Track {
   }
 
   applyPreferences(preferences) {
-    preferences.playing ? this.startPlay() : this.pausePlay();
+    preferences.tracksPlaying ? this.startPlay() : this.pausePlay();
   }
 
   refreshDisplay() {

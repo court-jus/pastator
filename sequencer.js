@@ -5,7 +5,7 @@ export class Sequencer {
     this.preferences = preferences;
     this.tracks = tracks;
     this.position = 0;
-    this.playing = preferences.playing;
+    this.playing = preferences.seqPlaying;
     this.progression = [1, 1, 4, 6, 3, 5];
     this.inputs = {
       progression: sequencerInput,
@@ -53,5 +53,11 @@ export class Sequencer {
       this.setCurrentChord();
       this.position += 1;
     }
+  }
+
+  savePreferences() {
+    return {
+      seqPlaying: self.playing,
+    };
   }
 }

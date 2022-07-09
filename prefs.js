@@ -67,5 +67,6 @@ export const clearPreferences = () => {
 export const DefaultPreferences = {
   midiIn: null,
   midiOut: null,
-  playing: true,
+  seqPlaying: false,
+  tracksPlaying: true,
 };
