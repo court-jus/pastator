@@ -1,9 +1,9 @@
 "use strict";
 
 import { connectSystem } from "./midi.js";
-import { tracks } from "./song1.js";
+import { tracks as song1 } from "./song1.js";
 import { Sequencer } from "./sequencer.js";
-import { setUpTracksTable, setUpMainControls } from "./gui.js";
+import { setUpMainControls } from "./gui.js";
 import { Song } from "./song.js";
 import { loadPreferences, savePreferences } from "./prefs.js";
 
@@ -22,10 +22,10 @@ window.masterClock = 0;
 console.log("Starting up...");
 if (navigator.requestMIDIAccess) {
   console.log("Setting up GUI");
-  const song = new Song(preferences, tracks);
+  const song = new Song(preferences);
+  song.loadSong(song1);
   const sequencer = new Sequencer(preferences, song);
   setUpMainControls(sequencer);
-  setUpTracksTable(song);
   console.log("Requesting MIDI Access");
   connectSystem(preferences, sequencer);
   window.setInterval(() => {

@@ -12,15 +12,23 @@ const playNote = (port, channel, note, velocity, delay = 0) => {
     }, delay);
     return;
   }
-  port.send([0x80 | (1 << 4) | channel, note, velocity]);
+  if (note > -1 && note < 128) port.send([0x80 | (1 << 4) | channel, note, velocity]);
 };
 
 const stopNote = (port, channel, note) => {
-  port.send([0x80 | (0 << 4) | channel, note, 64]);
+  if (note > -1 && note < 128) port.send([0x80 | (0 << 4) | channel, note, 64]);
 };
 
 export class Track {
-  constructor(channel, transpose, gate, baseVelocity, division, rythmDefinition, notesAvailable) {
+  constructor(
+    channel = 0,
+    transpose = 0,
+    gate = 100,
+    baseVelocity = 100,
+    division = 1,
+    rythmDefinition = [100],
+    notesAvailable = []
+  ) {
     this.device = null;
     this.channel = channel;
     this.currentNote = [];
@@ -62,15 +70,22 @@ export class Track {
   }
 
   refreshDisplay() {
-    if (this.inputs.channel) this.inputs.channel.value = this.channel;
-    if (this.inputs.division) this.inputs.division.value = this.division;
-    if (this.inputs.gravityCenter) this.inputs.gravityCenter.value = this.gravityCenter;
-    if (this.inputs.gravityStrength) this.inputs.gravityStrength.value = this.gravityStrength;
-    if (this.inputs.notes) this.inputs.notes.value = this.availableNotes.join(" ");
-    if (this.inputs.playMode) this.inputs.playMode.value = this.playMode;
-    if (this.inputs.relatedTo) this.inputs.relatedTo.value = this.relatedTo;
-    if (this.inputs.rythm) this.inputs.rythm.value = this.rythmDefinition.join(" ");
-    if (this.inputs.vol) this.inputs.vol.value = this.baseVelocity;
+    if (this.inputs.channel && this.inputs.channel !== document.activeElement) this.inputs.channel.value = this.channel;
+    if (this.inputs.division && this.inputs.division !== document.activeElement)
+      this.inputs.division.value = this.division;
+    if (this.inputs.gravityCenter && this.inputs.gravityCenter !== document.activeElement)
+      this.inputs.gravityCenter.value = this.gravityCenter;
+    if (this.inputs.gravityStrength && this.inputs.gravityStrength !== document.activeElement)
+      this.inputs.gravityStrength.value = this.gravityStrength;
+    if (this.inputs.notes && this.inputs.notes !== document.activeElement)
+      this.inputs.notes.value = this.availableNotes.join(" ");
+    if (this.inputs.playMode && this.inputs.playMode !== document.activeElement)
+      this.inputs.playMode.value = this.playMode;
+    if (this.inputs.relatedTo && this.inputs.relatedTo !== document.activeElement)
+      this.inputs.relatedTo.value = this.relatedTo;
+    if (this.inputs.rythm && this.inputs.rythm !== document.activeElement)
+      this.inputs.rythm.value = this.rythmDefinition.join(" ");
+    if (this.inputs.vol && this.inputs.vol !== document.activeElement) this.inputs.vol.value = this.baseVelocity;
   }
 
   addNote(note) {
@@ -215,15 +230,7 @@ export class Track {
 
 export const PresetTrack = (channel, baseVelocity, gate, categoryId, presetId) => {
   const preset = presets[categoryId].filter((value) => value.id === presetId)[0];
-  const track = new Track(
-    channel,
-    0,
-    gate,
-    baseVelocity,
-    preset.division * baseDivision,
-    preset.rythm,
-    []
-  );
+  const track = new Track(channel, 0, gate, baseVelocity, preset.division * baseDivision, preset.rythm, []);
   track.setPreset({
     ...preset,
     category: categoryId,

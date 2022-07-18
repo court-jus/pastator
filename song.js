@@ -1,15 +1,29 @@
+import { setUpTrackGui } from "./gui.js";
+import { Track } from "./track.js";
 export class Song {
-  constructor(preferences, tracks) {
+  constructor(preferences) {
     this.preferences = preferences;
-    this.tracks = tracks;
+    this.device = null;
+    this.tracks = [];
     this.root = null;
     this.scale = null;
     this.chord = null;
     this.chordType = null;
-    for (const track of this.tracks) {
-      track.song = this;
-      track.applyPreferences(preferences);
+  }
+
+  loadSong(songTracks) {
+    for (const track of songTracks) {
+      this.addTrack(track);
     }
+  }
+
+  addTrack(track = undefined) {
+    const newTrack = track || new Track();
+    newTrack.song = this;
+    newTrack.applyPreferences(this.preferences);
+    newTrack.setDevice(this.device);
+    this.tracks.push(newTrack);
+    setUpTrackGui(newTrack);
   }
 
   getValuesFromGui() {
@@ -51,6 +65,7 @@ export class Song {
     }
   }
   setDevice(device) {
+    this.device = device;
     for (const track of this.tracks) {
       track.setDevice(device);
     }
