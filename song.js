@@ -26,6 +26,14 @@ export class Song {
     setUpTrackGui(newTrack);
   }
 
+  removeTrack(track) {
+    const trackIndex = this.tracks.indexOf(track);
+    console.log("Remove", track, "at", trackIndex, "channel", track.channel);
+    this.tracks.splice(trackIndex, 1);
+    console.log(this, this.tracks.map(tra => tra.channel));
+    return trackIndex;
+  }
+
   getValuesFromGui() {
     this.root = parseInt(document.getElementById("root-note").value, 10);
     this.scale = document.getElementById("scale").value;

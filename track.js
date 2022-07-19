@@ -207,6 +207,11 @@ export class Track {
     this.position = 0;
   }
 
+  delete() {
+    this.fullStop(true);
+    return this.song.removeTrack(this);
+  }
+
   tick() {
     if (!this.playing || this.division === 0) return;
     if (window.masterClock % this.division === 0) {

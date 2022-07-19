@@ -3,6 +3,7 @@ import { clearPreferences, dumpPreferences, handlePrefsFileSelected } from "./pr
 import { presets } from "./presets.js";
 
 export const setUpTrackGui = (track) => {
+  const tracksContainer = document.getElementById("tracks");
   const row = document.createElement("tr");
 
   const playBtn = document.createElement("button");
@@ -134,6 +135,15 @@ export const setUpTrackGui = (track) => {
   const evt = new Event("change");
   categorySelect.dispatchEvent(evt);
 
+  const delBtn = document.createElement("button");
+  delBtn.innerHTML = "X";
+  delBtn.onclick = () => {
+    const trackIndex = track.delete();
+    tracksContainer.removeChild(
+      tracksContainer.children[trackIndex]
+    );
+  };
+
   for (const item of [
     playBtn,
     channelInput,
@@ -147,16 +157,17 @@ export const setUpTrackGui = (track) => {
     volInput,
     categorySelect,
     presetSelect,
+    delBtn,
   ]) {
     const td = document.createElement("td");
     td.appendChild(item);
     row.appendChild(td);
   }
-  const tracksContainer = document.getElementById("tracks");
   tracksContainer.appendChild(row);
 
   track.inputs.channel = channelInput;
   channelInput.onchange = (ev) => {
+    track.stop();
     track.channel = parseInt(ev.target.value, 10);
     track.refreshDisplay();
   };
