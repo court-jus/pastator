@@ -3,7 +3,6 @@
 import { connectSystem } from "./midi.js";
 import { Sequencer } from "./sequencer.js";
 import { setUpMainControls } from "./gui.js";
-import { Song } from "./song.js";
 import { loadPreferences, savePreferences } from "./prefs.js";
 
 // Notification area to show the connection and error messages.
@@ -21,8 +20,7 @@ window.masterClock = 0;
 console.log("Starting up...");
 if (navigator.requestMIDIAccess) {
   console.log("Setting up GUI");
-  const song = new Song(preferences);
-  const sequencer = new Sequencer(preferences, song);
+  const sequencer = new Sequencer(preferences);
   setUpMainControls(sequencer);
   console.log("Requesting MIDI Access");
   connectSystem(preferences, sequencer);

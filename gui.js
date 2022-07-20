@@ -1,6 +1,7 @@
 "use strict";
 import { clearPreferences, dumpPreferences, handlePrefsFileSelected } from "./prefs.js";
 import { presets } from "./presets.js";
+import { download } from "./utils.js";
 
 export const setUpTrackGui = (track) => {
   const tracksContainer = document.getElementById("tracks");
@@ -167,9 +168,7 @@ export const setUpTrackGui = (track) => {
 
   track.inputs.channel = channelInput;
   channelInput.onchange = (ev) => {
-    track.stop();
-    track.channel = parseInt(ev.target.value, 10);
-    track.refreshDisplay();
+    track.setChannel(parseInt(ev.target.value, 10));
   };
   track.inputs.division = divInput;
   divInput.onchange = (ev) => {
@@ -277,4 +276,23 @@ export const setUpMainControls = (sequencer) => {
   document.getElementById("addtrack-btn").onclick = () => {
     song.addTrack();
   };
+  document.getElementById("savesong-btn").onclick = () => {
+    const data = song.save();
+    download("song.json", JSON.stringify(data, undefined ,2));
+  }
+
+  const handleSongFileSelected = (evt) => {
+    const files = evt.target.files;
+    const f = files[0];
+    const reader = new FileReader();
+  
+    reader.onload = (() => {
+      return (e) => {
+        song.load(JSON.parse(e.target.result));
+      };
+    })(f);
+  
+    reader.readAsText(f);
+  };
+  document.getElementById("song-file-input").addEventListener("change", handleSongFileSelected, false);
 };

@@ -1,9 +1,11 @@
+import { Song } from "./song.js";
+
 const sequencerInput = document.getElementById("chord-sequence");
 
 export class Sequencer {
-  constructor(preferences, song) {
+  constructor(preferences) {
     this.preferences = preferences;
-    this.song = song;
+    this.song = new Song(this.preferences);
     this.position = 0;
     this.playing = preferences.seqPlaying;
     this.progression = [1, 1, 4, 6, 3, 5];

@@ -20,32 +20,24 @@ const stopNote = (port, channel, note) => {
 };
 
 export class Track {
-  constructor(
-    channel = 0,
-    transpose = 0,
-    gate = 100,
-    baseVelocity = 100,
-    division = 1,
-    rythmDefinition = [100],
-    notesAvailable = []
-  ) {
+  constructor() {
     this.device = null;
-    this.channel = channel;
+    this.channel = 0;
     this.currentNote = [];
-    this.gate = gate;
-    this.transpose = transpose;
-    this.baseVelocity = baseVelocity;
-    this.division = division;
+    this.gate = 100;
+    this.transpose = 0;
+    this.baseVelocity = 100;
+    this.division = 1;
     this.gravityCenter = null;
     this.gravityStrength = null;
     this.strumDelay = 0;
-    this.rythmDefinition = rythmDefinition;
+    this.rythmDefinition = [100];
     this.position = 0;
     this.playing = false;
     this.timeout = null;
     this.song = null;
     this.lastNotes = [];
-    this.availableNotes = notesAvailable;
+    this.availableNotes = [];
     this.maxNotes = 7;
     this.currentPreset = null;
     this.playMode = "nil";
@@ -134,6 +126,12 @@ export class Track {
 
   setDevice(device) {
     this.device = device;
+  }
+
+  setChannel(channel) {
+    this.stop();
+    this.channel = channel;
+    this.refreshDisplay();
   }
 
   note() {
@@ -231,14 +229,40 @@ export class Track {
     this.stop();
     this.play();
   }
-}
 
-export const PresetTrack = (channel, baseVelocity, gate, categoryId, presetId) => {
-  const preset = presets[categoryId].filter((value) => value.id === presetId)[0];
-  const track = new Track(channel, 0, gate, baseVelocity, preset.division * baseDivision, preset.rythm, []);
-  track.setPreset({
-    ...preset,
-    category: categoryId,
-  });
-  return track;
-};
+  save() {
+    return {
+      channel: this.channel,
+      gate: this.gate,
+      transpose: this.transpose,
+      baseVelocity: this.baseVelocity,
+      division: this.division,
+      gravityCenter: this.gravityCenter,
+      gravityStrength: this.gravityStrength,
+      strumDelay: this.strumDelay,
+      rythmDefinition: this.rythmDefinition,
+      maxNotes: this.maxNotes,
+      currentPreset: this.currentPreset,
+      playMode: this.playMode,
+      relatedTo: this.relatedTo
+    };
+  }
+
+  load(trackData) {
+    this.gate = trackData.gate;
+    this.transpose = trackData.transpose;
+    this.baseVelocity = trackData.baseVelocity;
+    this.division = trackData.division;
+    this.gravityCenter = trackData.gravityCenter;
+    this.gravityStrength = trackData.gravityStrength;
+    this.strumDelay = trackData.strumDelay;
+    this.rythmDefinition = trackData.rythmDefinition;
+    this.maxNotes = trackData.maxNotes;
+    this.playMode = trackData.playMode;
+    this.relatedTo = trackData.relatedTo;
+    if (trackData.currentPreset) {
+      this.setPreset(trackData.currentPreset);
+    }
+    this.setChannel(trackData.channel);
+  }
+}

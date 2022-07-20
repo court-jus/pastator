@@ -52,7 +52,7 @@ export const presets = {
       octaves: [-1],
       division: 0,
       playMode: "atonce",
-      relatedTo: "scqle",
+      relatedTo: "scale",
     },
   ],
   lead: [

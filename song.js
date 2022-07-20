@@ -11,12 +11,6 @@ export class Song {
     this.chordType = null;
   }
 
-  loadSong(songTracks) {
-    for (const track of songTracks) {
-      this.addTrack(track);
-    }
-  }
-
   addTrack(track = undefined) {
     const newTrack = track || new Track();
     newTrack.song = this;
@@ -102,12 +96,38 @@ export class Song {
     }
   }
 
+  refreshDisplay() {
+    document.getElementById("root-note").value = this.root;
+    document.getElementById("scale").value = this.scale;
+    document.getElementById("chord-degree").value = this.chord;
+    document.getElementById("chord-type").value = this.chordType;
+  }
+
   save() {
     return {
       root: this.root,
       scale: this.scale,
       chord: this.chord,
       chordType: this.chordType,
+      tracks: this.tracks.map(track => track.save())
     };
   }
+
+  load(data) {
+    this.root = data.root;
+    this.scale = data.scale;
+    this.chord = data.chord;
+    this.chordType = data.chordType;
+    this.loadTracks(data.tracks);
+    this.refreshDisplay();
+  }
+
+  loadTracks(songTracks) {
+    for (const trackData of songTracks) {
+      const track = new Track();
+      track.load(trackData);
+      this.addTrack(track);
+    }
+  }
+
 }
