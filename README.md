@@ -4,6 +4,10 @@
 
 [Demo](https://court-jus.github.io/pastator/)
 
+## See it in action
+
+[Video](https://youtu.be/tLba4AEriVQ)
+
 ## What it is
 
 This project is an enhanced MIDI arpeggiator, inspired by other products like [The NDLR by Conductive Labs](https://conductivelabs.com/ndlr/) or [The T-1 by Torso Electronics](https://torsoelectronics.com/t-1/). I find this type of products really inspiring and wanted to give it a try and see what I could come up with.
