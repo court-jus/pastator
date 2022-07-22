@@ -1,4 +1,3 @@
-import { setUpTrackGui } from "./gui.js";
 import { Track } from "./track.js";
 export class Song {
   constructor(preferences) {
@@ -17,14 +16,11 @@ export class Song {
     newTrack.applyPreferences(this.preferences);
     newTrack.setDevice(this.device);
     this.tracks.push(newTrack);
-    setUpTrackGui(newTrack);
   }
 
   removeTrack(track) {
     const trackIndex = this.tracks.indexOf(track);
-    console.log("Remove", track, "at", trackIndex, "channel", track.channel);
     this.tracks.splice(trackIndex, 1);
-    console.log(this, this.tracks.map(tra => tra.channel));
     return trackIndex;
   }
 
@@ -113,7 +109,20 @@ export class Song {
     };
   }
 
+  new() {
+    this.fullStop();
+    this.root = 60;
+    this.scale = "major";
+    this.chord = 1;
+    this.chordType = "seventh";
+    for(const track of [...this.tracks]) {
+      track.gui.deleteTrack();
+    }
+    this.refreshDisplay();
+  }
+
   load(data) {
+    this.new();
     this.root = data.root;
     this.scale = data.scale;
     this.chord = data.chord;
@@ -125,6 +134,7 @@ export class Song {
   loadTracks(songTracks) {
     for (const trackData of songTracks) {
       const track = new Track();
+      track.song = this;
       track.load(trackData);
       this.addTrack(track);
     }

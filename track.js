@@ -1,9 +1,8 @@
 "use strict";
 
 import { getNotes } from "./engine.js";
-import { presets } from "./presets.js";
+import { TrackGui } from "./gui.js";
 
-const baseDivision = 12; // 1 beat
 
 const playNote = (port, channel, note, velocity, delay = 0) => {
   if (delay) {
@@ -42,19 +41,7 @@ export class Track {
     this.currentPreset = null;
     this.playMode = "nil";
     this.relatedTo = "nil";
-    this.inputs = {
-      channel: null,
-      division: null,
-      gravityCenter: null,
-      gravityStrength: null,
-      notes: null,
-      playMode: null,
-      relatedTo: null,
-      rythm: null,
-      vol: null,
-      presetCategory: null,
-      preset: null,
-    };
+    this.gui = new TrackGui(this);
   }
 
   applyPreferences(preferences) {
@@ -62,22 +49,7 @@ export class Track {
   }
 
   refreshDisplay() {
-    if (this.inputs.channel && this.inputs.channel !== document.activeElement) this.inputs.channel.value = this.channel;
-    if (this.inputs.division && this.inputs.division !== document.activeElement)
-      this.inputs.division.value = this.division;
-    if (this.inputs.gravityCenter && this.inputs.gravityCenter !== document.activeElement)
-      this.inputs.gravityCenter.value = this.gravityCenter;
-    if (this.inputs.gravityStrength && this.inputs.gravityStrength !== document.activeElement)
-      this.inputs.gravityStrength.value = this.gravityStrength;
-    if (this.inputs.notes && this.inputs.notes !== document.activeElement)
-      this.inputs.notes.value = this.availableNotes.join(" ");
-    if (this.inputs.playMode && this.inputs.playMode !== document.activeElement)
-      this.inputs.playMode.value = this.playMode;
-    if (this.inputs.relatedTo && this.inputs.relatedTo !== document.activeElement)
-      this.inputs.relatedTo.value = this.relatedTo;
-    if (this.inputs.rythm && this.inputs.rythm !== document.activeElement)
-      this.inputs.rythm.value = this.rythmDefinition.join(" ");
-    if (this.inputs.vol && this.inputs.vol !== document.activeElement) this.inputs.vol.value = this.baseVelocity;
+    this.gui.refreshDisplay();
   }
 
   addNote(note) {
@@ -91,7 +63,7 @@ export class Track {
   setPreset(preset) {
     this.currentPreset = preset;
     this.rythmDefinition = preset.rythm;
-    this.division = preset.division * baseDivision;
+    this.division = preset.division;
     this.playMode = preset.playMode;
     this.relatedTo = preset.relatedTo;
     this.updateNotes();
@@ -185,10 +157,12 @@ export class Track {
 
   startPlay() {
     this.playing = true;
+    this.refreshDisplay();
   }
 
   pausePlay() {
     this.playing = false;
+    this.refreshDisplay();
   }
 
   togglePlay() {
@@ -197,12 +171,14 @@ export class Track {
     } else {
       this.startPlay();
     }
+    return this.playing;
   }
 
   fullStop(panic = false) {
     if (panic) this.stop();
     this.playing = false;
     this.position = 0;
+    this.refreshDisplay();
   }
 
   delete() {

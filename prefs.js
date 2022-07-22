@@ -16,7 +16,6 @@ export const savePreferences = (preferences) => {
     midiIn: window.receiveDevice?.id,
     midiOut: window.sendDevice?.id,
   };
-  console.debug("Saving preferences...", toSave);
   localStorage.setItem("preferences", JSON.stringify(toSave));
 };
 

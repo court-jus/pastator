@@ -3,217 +3,227 @@ import { clearPreferences, dumpPreferences, handlePrefsFileSelected } from "./pr
 import { presets } from "./presets.js";
 import { download } from "./utils.js";
 
-export const setUpTrackGui = (track) => {
-  const tracksContainer = document.getElementById("tracks");
-  const row = document.createElement("tr");
+const tracksContainer = document.getElementById("tracks");
 
-  const playBtn = document.createElement("button");
-  playBtn.innerHTML = "P";
-  playBtn.onclick = () => {
-    track.togglePlay();
-  };
+export class TrackGui {
+  constructor(track) {
+    this.track = track;
+    this.trackContainer = document.createElement("tr");
 
-  const channelInput = document.createElement("input");
-  channelInput.type = "number";
-  channelInput.min = 1;
-  channelInput.max = 16;
+    this.playBtn = document.createElement("button");
+    this.playBtn.onclick = () => {
+      this.track.togglePlay();
+    };
 
-  const divInput = document.createElement("input");
-  divInput.type = "number";
-  divInput.min = 1;
-  divInput.max = 128;
+    this.channelInput = document.createElement("input");
+    this.channelInput.type = "number";
+    this.channelInput.min = 1;
+    this.channelInput.max = 16;
+    this.channelInput.onchange = (ev) => {
+      this.track.setChannel(parseInt(ev.target.value, 10));
+    };
 
-  const gravityCenterInput = document.createElement("input");
-  gravityCenterInput.type = "number";
-  gravityCenterInput.min = 1;
-  gravityCenterInput.max = 128;
+    this.divInput = document.createElement("input");
+    this.divInput.type = "number";
+    this.divInput.min = 1;
+    this.divInput.max = 128;
+    this.divInput.onchange = (ev) => {
+      this.track.division = parseInt(ev.target.value, 10);
+      this.refreshDisplay();
+    };
 
-  const gravityStrengthInput = document.createElement("input");
-  gravityStrengthInput.type = "number";
-  gravityStrengthInput.min = 1;
-  gravityStrengthInput.max = 128;
+    this.gravityCenterInput = document.createElement("input");
+    this.gravityCenterInput.type = "number";
+    this.gravityCenterInput.min = 1;
+    this.gravityCenterInput.max = 128;
+    this.gravityCenterInput.onchange = (ev) => {
+      this.track.gravityCenter = parseInt(ev.target.value, 10);
+      this.track.updateNotes();
+    };
 
-  const notesInput = document.createElement("input");
-  const playModeInput = document.createElement("select");
-  for (const playMode of [
-    {
-      id: "nil",
-      label: "---",
-    },
-    {
-      id: "up",
-      label: "up",
-    },
-    {
-      id: "random",
-      label: "random",
-    },
-    {
-      id: "atonce",
-      label: "All at once",
-    },
-  ]) {
-    const option = document.createElement("option");
-    option.value = playMode.id;
-    option.innerHTML = playMode.label;
-    playModeInput.appendChild(option);
-  }
-  const relatedToInput = document.createElement("select");
-  for (const relatedTo of [
-    {
-      id: "nil",
-      label: "---",
-    },
-    {
-      id: "scale",
-      label: "scale",
-    },
-    {
-      id: "chord",
-      label: "chord",
-    },
-    {
-      id: "static",
-      label: "static",
-    },
-  ]) {
-    const option = document.createElement("option");
-    option.value = relatedTo.id;
-    option.innerHTML = relatedTo.label;
-    relatedToInput.appendChild(option);
-  }
-  const rythmInput = document.createElement("input");
+    this.gravityStrengthInput = document.createElement("input");
+    this.gravityStrengthInput.type = "number";
+    this.gravityStrengthInput.min = 1;
+    this.gravityStrengthInput.max = 128;
+    this.gravityStrengthInput.onchange = (ev) => {
+      this.track.gravityStrength = parseInt(ev.target.value, 10);
+      this.track.updateNotes();
+    };
 
-  const volInput = document.createElement("input");
-  volInput.type = "number";
-  volInput.min = 0;
-  volInput.max = 100;
-
-  const categorySelect = document.createElement("select");
-  const defaultCategoryOption = document.createElement("option");
-  defaultCategoryOption.value = "nil";
-  defaultCategoryOption.innerHTML = "---";
-  categorySelect.appendChild(defaultCategoryOption);
-  for (const presetName of Object.keys(presets)) {
-    const option = document.createElement("option");
-    option.value = presetName;
-    option.innerHTML = presetName;
-    categorySelect.appendChild(option);
-  }
-  const presetSelect = document.createElement("select");
-  const defaultPresetOption = document.createElement("option");
-  defaultPresetOption.value = "nil";
-  defaultPresetOption.innerHTML = "---";
-  presetSelect.appendChild(defaultPresetOption);
-  categorySelect.onchange = (ev) => {
-    for (let i = presetSelect.options.length - 1; i >= 1; i--) {
-      presetSelect.remove(i);
+    this.notesInput = document.createElement("input");
+    this.notesInput.onchange = (ev) => {
+      this.track.availableNotes = ev.target.value.split(" ").map((val) => parseInt(val, 10));
+      this.refreshDisplay();
+    };
+    this.playModeInput = document.createElement("select");
+    for (const playMode of [
+      {
+        id: "nil",
+        label: "---",
+      },
+      {
+        id: "up",
+        label: "up",
+      },
+      {
+        id: "random",
+        label: "random",
+      },
+      {
+        id: "atonce",
+        label: "All at once",
+      },
+    ]) {
+      const option = document.createElement("option");
+      option.value = playMode.id;
+      option.innerHTML = playMode.label;
+      this.playModeInput.appendChild(option);
     }
-    const categoryId = ev.target.value;
-    const categoryPresets = presets[categoryId];
-    if (categoryPresets) {
-      for (const preset of categoryPresets) {
-        const option = document.createElement("option");
-        option.value = preset.id;
-        option.innerHTML = preset.label;
-        presetSelect.appendChild(option);
+    this.playModeInput.onchange = (ev) => {
+      this.track.playMode = ev.target.value;
+      this.refreshDisplay();
+    };
+
+    this.relatedToInput = document.createElement("select");
+    for (const relatedTo of [
+      {
+        id: "nil",
+        label: "---",
+      },
+      {
+        id: "scale",
+        label: "scale",
+      },
+      {
+        id: "chord",
+        label: "chord",
+      },
+      {
+        id: "static",
+        label: "static",
+      },
+    ]) {
+      const option = document.createElement("option");
+      option.value = relatedTo.id;
+      option.innerHTML = relatedTo.label;
+      this.relatedToInput.appendChild(option);
+    }
+    this.relatedToInput.onchange = (ev) => {
+      this.track.relatedTo = ev.target.value;
+      this.track.updateNotes();
+    };
+
+    this.rythmInput = document.createElement("input");
+    this.rythmInput.onchange = (ev) => {
+      this.track.rythmDefinition = ev.target.value.split(" ").map((val) => parseInt(val, 10));
+      this.refreshDisplay();
+    };
+
+    this.volInput = document.createElement("input");
+    this.volInput.type = "number";
+    this.volInput.min = 0;
+    this.volInput.max = 100;
+    this.volInput.onchange = (ev) => {
+      this.track.baseVelocity = parseInt(ev.target.value, 10);
+      this.refreshDisplay();
+    };
+
+    this.categorySelect = document.createElement("select");
+    const defaultCategoryOption = document.createElement("option");
+    defaultCategoryOption.value = "nil";
+    defaultCategoryOption.innerHTML = "---";
+    this.categorySelect.appendChild(defaultCategoryOption);
+    for (const categoryName of Object.keys(presets)) {
+      const option = document.createElement("option");
+      option.value = categoryName;
+      option.innerHTML = categoryName;
+      this.categorySelect.appendChild(option);
+    }
+    this.presetSelect = document.createElement("select");
+    const defaultPresetOption = document.createElement("option");
+    defaultPresetOption.value = "nil";
+    defaultPresetOption.innerHTML = "---";
+    this.presetSelect.appendChild(defaultPresetOption);
+    this.categorySelect.onchange = (ev) => {
+      for (let i = this.presetSelect.options.length - 1; i >= 1; i--) {
+        this.presetSelect.remove(i);
       }
-      presetSelect.value =
-        track.currentPreset && track.currentPreset.category === categoryId ? track.currentPreset.id : "nil";
-      presetSelect.onchange = (ev) => {
+      const categoryId = ev.target.value;
+      const categoryPresets = presets[categoryId];
+      if (categoryPresets) {
         for (const preset of categoryPresets) {
-          if (preset.id === ev.target.value) {
-            track.setPreset({
-              ...preset,
-              category: categoryId,
-            });
-          }
+          const option = document.createElement("option");
+          option.value = preset.id;
+          option.innerHTML = preset.label;
+          this.presetSelect.appendChild(option);
         }
-      };
-    }
-  };
-  categorySelect.value = track.currentPreset ? track.currentPreset.category : "nil";
-  const evt = new Event("change");
-  categorySelect.dispatchEvent(evt);
+        this.presetSelect.value =
+          this.track.currentPreset && this.track.currentPreset.category === categoryId ? this.track.currentPreset.id : "nil";
+        this.presetSelect.onchange = (ev) => {
+          for (const preset of categoryPresets) {
+            if (preset.id === ev.target.value) {
+              this.track.setPreset({
+                ...preset,
+                category: categoryId,
+              });
+            }
+          }
+        };
+      }
+    };
 
-  const delBtn = document.createElement("button");
-  delBtn.innerHTML = "X";
-  delBtn.onclick = () => {
-    const trackIndex = track.delete();
+    this.delBtn = document.createElement("button");
+    this.delBtn.innerHTML = "X";
+    this.delBtn.onclick = () => this.deleteTrack();
+
+    for (const item of [
+      this.playBtn,
+      this.channelInput,
+      this.divInput,
+      this.gravityCenterInput,
+      this.gravityStrengthInput,
+      this.notesInput,
+      this.playModeInput,
+      this.relatedToInput,
+      this.rythmInput,
+      this.volInput,
+      this.categorySelect,
+      this.presetSelect,
+      this.delBtn,
+    ]) {
+      const td = document.createElement("td");
+      td.appendChild(item);
+      this.trackContainer.appendChild(td);
+    }
+
+    tracksContainer.appendChild(this.trackContainer);
+    this.refreshDisplay();
+  }
+
+  deleteTrack() {
+    const trackIndex = this.track.delete();
     tracksContainer.removeChild(
       tracksContainer.children[trackIndex]
     );
-  };
-
-  for (const item of [
-    playBtn,
-    channelInput,
-    divInput,
-    gravityCenterInput,
-    gravityStrengthInput,
-    notesInput,
-    playModeInput,
-    relatedToInput,
-    rythmInput,
-    volInput,
-    categorySelect,
-    presetSelect,
-    delBtn,
-  ]) {
-    const td = document.createElement("td");
-    td.appendChild(item);
-    row.appendChild(td);
   }
-  tracksContainer.appendChild(row);
 
-  track.inputs.channel = channelInput;
-  channelInput.onchange = (ev) => {
-    track.setChannel(parseInt(ev.target.value, 10));
-  };
-  track.inputs.division = divInput;
-  divInput.onchange = (ev) => {
-    track.division = parseInt(ev.target.value, 10);
-    track.refreshDisplay();
-  };
-  track.inputs.gravityCenter = gravityCenterInput;
-  gravityCenterInput.onchange = (ev) => {
-    track.gravityCenter = parseInt(ev.target.value, 10);
-    track.updateNotes();
-  };
-  track.inputs.gravityStrength = gravityStrengthInput;
-  gravityStrengthInput.onchange = (ev) => {
-    track.gravityStrength = parseInt(ev.target.value, 10);
-    track.updateNotes();
-  };
-  track.inputs.notes = notesInput;
-  notesInput.onchange = (ev) => {
-    track.availableNotes = ev.target.value.split(" ").map((val) => parseInt(val, 10));
-    track.refreshDisplay();
-  };
-  track.inputs.playMode = playModeInput;
-  playModeInput.onchange = (ev) => {
-    track.playMode = ev.target.value;
-    track.refreshDisplay();
-  };
-  track.inputs.relatedTo = relatedToInput;
-  relatedToInput.onchange = (ev) => {
-    track.relatedTo = ev.target.value;
-    track.updateNotes();
-  };
-  track.inputs.rythm = rythmInput;
-  rythmInput.onchange = (ev) => {
-    track.rythmDefinition = ev.target.value.split(" ").map((val) => parseInt(val, 10));
-    track.refreshDisplay();
-  };
-  track.inputs.vol = volInput;
-  volInput.onchange = (ev) => {
-    track.baseVelocity = parseInt(ev.target.value, 10);
-    track.refreshDisplay();
-  };
-  track.inputs.preset = presetSelect;
-  track.inputs.presetCategory = categorySelect;
-  track.refreshDisplay();
-};
+  refreshDisplay() {
+    this.playBtn.innerHTML = this.track.playing ? "P" : "S";
+    if (this.channelInput !== document.activeElement) this.channelInput.value = this.track.channel;
+    if (this.divInput !== document.activeElement) this.divInput.value = this.track.division;
+    if (this.gravityCenterInput !== document.activeElement) this.gravityCenterInput.value = this.track.gravityCenter;
+    if (this.gravityStrengthInput !== document.activeElement) this.gravityStrengthInput.value = this.track.gravityStrength;
+    if (this.notesInput !== document.activeElement) this.notesInput.value = this.track.availableNotes.join(" ");
+    if (this.playModeInput !== document.activeElement) this.playModeInput.value = this.track.playMode;
+    if (this.relatedToInput !== document.activeElement) this.relatedToInput.value = this.track.relatedTo;
+    if (this.rythmInput !== document.activeElement) this.rythmInput.value = this.track.rythmDefinition.join(" ");
+    if (this.volInput !== document.activeElement) this.volInput.value = this.track.baseVelocity;
+    this.categorySelect.value = this.track.currentPreset ? this.track.currentPreset.category : "nil";
+    const evt = new Event("change");
+    this.categorySelect.dispatchEvent(evt);
+  }
+}
+
 
 export const setUpMainControls = (sequencer) => {
   const song = sequencer.song;
@@ -278,20 +288,23 @@ export const setUpMainControls = (sequencer) => {
   };
   document.getElementById("savesong-btn").onclick = () => {
     const data = song.save();
-    download("song.json", JSON.stringify(data, undefined ,2));
+    download("song.json", JSON.stringify(data, undefined, 2));
+  }
+  document.getElementById("newsong-btn").onclick = () => {
+    song.new();
   }
 
   const handleSongFileSelected = (evt) => {
     const files = evt.target.files;
     const f = files[0];
     const reader = new FileReader();
-  
+
     reader.onload = (() => {
       return (e) => {
         song.load(JSON.parse(e.target.result));
       };
     })(f);
-  
+
     reader.readAsText(f);
   };
   document.getElementById("song-file-input").addEventListener("change", handleSongFileSelected, false);

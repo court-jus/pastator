@@ -204,8 +204,6 @@ const updateInput = (preferences, doPlay = false, song, sequencer = null) => {
           song.addNote(m.channel - 1, m.data[1]);
         } else if (m.type === "Note Off") {
           // pass
-        } else {
-          console.debug(m);
         }
       };
     };
