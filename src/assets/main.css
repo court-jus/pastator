@@ -1,0 +1,47 @@
+@import "./base.css";
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+
+  font-weight: normal;
+}
+
+@media (min-width: 1024px) {
+  body {
+    display: flex;
+    place-items: center;
+  }
+
+  #app {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding: 0 2rem;
+  }
+}
+
+.topleft-section {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.topright-section {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.bottomleft-section {
+  grid-column: 1 / 3;
+  grid-row: 3;
+}
+
+.bottomright-section {
+  grid-column: 3;
+  grid-row: 3;
+}
+
+.main-section {
+  grid-column: 1 / 4;
+  grid-row: 2 / 4;
+}
