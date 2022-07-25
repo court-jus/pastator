@@ -7,6 +7,7 @@ interface Props {
   songData: SongData
   device: MIDIOutput
   clock: number
+  removeTrack: (index: number) => void
 }
 defineProps<Props>()
 </script>
@@ -35,7 +36,13 @@ export default defineComponent({});
     </tr>
   </thead>
   <tbody>
-    <Track v-for="track of tracks" :device="device" :track="track" :songData="songData" :clock="clock"/>
+    <Track
+      v-for="(track, index) of tracks"
+      :device="device"
+      :track="track"
+      :song-data="songData"
+      :clock="clock"
+      :remove-track="() => removeTrack(index)" />
   </tbody>
 </template>
 

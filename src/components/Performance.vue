@@ -45,7 +45,10 @@ export default defineComponent({
   },
   methods: {
     addTrack() {
-      this.tracks.push(new TrackModel(this.tracks.length));
+      this.tracks.push(new TrackModel());
+    },
+    removeTrack(index: number) {
+      this.tracks.splice(index, 1);
     }
   }
 });
@@ -95,7 +98,13 @@ export default defineComponent({
   </div>
   <h2>Tracks</h2>
   <table>
-    <TrackList :tracks="tracks" :device="device" :song-data="songData" :clock="clock" />
+    <TrackList
+      :tracks="tracks"
+      :device="device"
+      :song-data="songData"
+      :clock="clock"
+      :removeTrack="removeTrack"
+      />
     <tfoot>
       <tr>
         <th colspan="2">

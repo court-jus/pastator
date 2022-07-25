@@ -11,8 +11,8 @@ export class SongModel {
 
   constructor() {
     this.tracks = [
-      new TrackModel(1),
-      new TrackModel(2)
+      new TrackModel(),
+      new TrackModel()
     ];
     this.rootNote = 60;
     this.scale = "major";
@@ -23,9 +23,8 @@ export class SongModel {
 
 
   addTrack(track = undefined) {
-    const newTrack = track || new TrackModel(this.tracks.length);
+    const newTrack = track || new TrackModel();
     // newTrack.applyPreferences(this.preferences);
-    if (this.device) newTrack.setDevice(this.device);
     this.tracks.push(newTrack);
   }
 
@@ -68,12 +67,6 @@ export class SongModel {
     }
   }
   */
-  setDevice(device: MIDIOutput) {
-    this.device = device;
-    for (const track of this.tracks) {
-      track.setDevice(device);
-    }
-  }
   /*
   addNote(channel: number, note: number) {
     for (const track of this.tracks.filter((track) => track.channel === channel)) {
@@ -127,7 +120,7 @@ export class SongModel {
 
   loadTracks(songTracks: TrackModel[]) {
     for (const trackData of songTracks) {
-      const track = new TrackModel(this.tracks.length, this);
+      const track = new TrackModel();
       track.song = this;
       track.load(trackData);
       this.addTrack(track);

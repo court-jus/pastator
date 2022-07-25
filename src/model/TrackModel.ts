@@ -16,35 +16,38 @@ const stopNote = (port: MIDIOutput, channel: number, note: number) => {
 };
 
 export class TrackModel {
-  id: number;
-  channel?: number;
-  division?: number;
+  channel: number;
+  division: number;
   gravityCenter?: number;
   gravityStrength?: number;
   currentNotes?: number[];
-  gate?: number;
-  transpose?: number;
-  baseVelocity?: number;
-  strumDelay?: number;
-  rythmDefinition?: number[];
+  gate: number;
+  transpose: number;
+  baseVelocity: number;
+  strumDelay: number;
+  rythmDefinition: number[];
   position?: number;
   playing?: boolean;
   timeout?: number;
   lastNotes?: number[];
-  availableNotes?: number[];
+  availableDegrees: number[];
+  octaves: number[];
   maxNotes?: number;
-  playMode?: string;
-  relatedTo?: string;
-  device?: MIDIOutput;
+  playMode: string;
+  relatedTo: string;
 
-  constructor(id: number) {
-    this.id = id;
+  constructor() {
+    this.channel = 0;
+    this.division = 48;
+    this.gate = 90;
+    this.playMode = "random";
+    this.relatedTo = "chord";
+    this.transpose = 0;
+    this.baseVelocity = 100;
+    this.strumDelay = 0;
+    this.rythmDefinition = [100];
+    this.availableDegrees = [0, 1, 2];
+    this.octaves = [0];
   }
-
-
-  setDevice(device:MIDIOutput) {
-    this.device = device;
-  }
-
 }
 

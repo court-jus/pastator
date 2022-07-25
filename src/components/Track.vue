@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { TrackModel } from "../model/TrackModel";
 import type { Preset, SongData } from "./types";
 import NumberListInput from "./NumberListInput.vue";
 import { getNotes, noteNumberToName, playNote, stopNote } from "../model/engine";
+import type { TrackModel } from "../model/TrackModel";
 import PresetSelect from "./PresetSelect.vue";
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
   songData: SongData
   device: MIDIOutput
   clock: number
+  removeTrack: () => void
 }
 defineProps<Props>()
 </script>
@@ -21,34 +22,22 @@ import { presets } from "@/model/presets";
 export default defineComponent({
   data() {
     return {
-      channel: 0,
-      division: 48,
-      gate: 100,
       position: 0,
-      gravityCenter: undefined,
-      gravityStrength: undefined,
-      availableDegrees: [0, 1, 2],
-      octaves: [0],
-      playMode: "random",
-      relatedTo: "chord",
-      rythmDefinition: [100],
-      baseVelocity: 100,
       playing: false,
       currentNotes: [] as number[],
-      transpose: 0,
       lastNotes: [] as number[],
       preset: undefined as Preset | undefined
     }
   },
   computed: {
     availableNotes: function () {
-      const candidateNotes = getNotes(this.$props.songData, this.availableDegrees, this.octaves, this.relatedTo);
-      if (this.gravityCenter === undefined || this.gravityStrength === undefined) {
+      const candidateNotes = getNotes(this.$props.songData, this.$props.track.availableDegrees, this.$props.track.octaves, this.$props.track.relatedTo);
+      if (this.$props.track.gravityCenter === undefined || this.$props.track.gravityStrength === undefined) {
         return candidateNotes;
       }
-      const margin = Math.trunc((140 - this.gravityStrength) / 2);
-      const lowerBound = Math.max(this.gravityCenter - margin, 0);
-      const higherBound = Math.min(this.gravityCenter + margin, 127);
+      const margin = Math.trunc((140 - this.$props.track.gravityStrength) / 2);
+      const lowerBound = Math.max(this.$props.track.gravityCenter - margin, 0);
+      const higherBound = Math.min(this.$props.track.gravityCenter + margin, 127);
       return candidateNotes.map((note) => {
         if (note < lowerBound) {
           const transp = lowerBound - note;
@@ -63,28 +52,28 @@ export default defineComponent({
     },
     rythmDefinitionComputed: {
       get() {
-        return this.rythmDefinition.join(" ");
+        return this.$props.track.rythmDefinition.join(" ");
       },
       set(newValue: string) {
-        this.rythmDefinition = newValue.split(" ").map((val: string) => parseInt(val, 10));
+        this.$props.track.rythmDefinition = newValue.split(" ").map((val: string) => parseInt(val, 10));
       }
     }
   },
   watch: {
     clock(newClock: number) {
-      if (!this.playing || this.division === 0) return;
-      if (newClock % this.division === 0) {
-        if (this.gate === 100) this.stop();
+      if (!this.playing || this.$props.track.division === 0) return;
+      if (newClock % this.$props.track.division === 0) {
+        if (this.$props.track.gate === 100) this.stop();
         this.play();
-      } else if (this.gate < 100) {
-        const pcLow = ((newClock % this.division) / this.division) * 100;
-        const pcHigh = (((newClock + 1) % this.division) / this.division) * 100;
-        if (pcLow < this.gate && pcHigh >= this.gate) {
+      } else if (this.$props.track.gate < 100) {
+        const pcLow = ((newClock % this.$props.track.division) / this.$props.track.division) * 100;
+        const pcHigh = (((newClock + 1) % this.$props.track.division) / this.$props.track.division) * 100;
+        if (pcLow < this.$props.track.gate && pcHigh >= this.$props.track.gate) {
           this.stop();
         }
       }
     },
-    channel(newChannel: number, oldChannel: number) {
+    'track.channel'(newChannel: number, oldChannel: number) {
       this.stop();
     },
     'songData.currentChord'(newChord: number) {
@@ -104,25 +93,25 @@ export default defineComponent({
       const reversed = [...this.availableNotes].reverse();
       const upDn = this.availableNotes.concat(reversed);
       const playedNotes = (
-        (this.playMode === "atonce" || this.playMode === "strum") ?
+        (this.$props.track.playMode === "atonce" || this.$props.track.playMode === "strum") ?
         this.availableNotes :
-        this.playMode === "random" ?
+        this.$props.track.playMode === "random" ?
         [this.availableNotes[Math.floor(Math.random() * this.availableNotes.length)]] :
-        this.playMode === "up" ?
+        this.$props.track.playMode === "up" ?
         [this.availableNotes[this.position % this.availableNotes.length]] :
-        this.playMode === "dn" ?
+        this.$props.track.playMode === "dn" ?
         [this.availableNotes[this.availableNotes.length - 1 - (this.position % this.availableNotes.length)]] :
-        this.playMode === "updn" ?
+        this.$props.track.playMode === "updn" ?
         [upDn[this.position % upDn.length]] :
         [this.availableNotes[0]]
       );
       const velocity = this.rythm();
-      if (velocity > 0) {
+      if (velocity > 0 && this.$props.track.channel !== undefined) {
         let strumDelay = 0;
         for (const note of playedNotes) {
-          this.currentNotes.push(note + this.transpose);
-          playNote(this.device, this.channel, note + this.transpose, velocity, strumDelay);
-          strumDelay += this.playMode === "strum" ? 150 : 0;
+          this.currentNotes.push(note + this.$props.track.transpose);
+          playNote(this.device, this.$props.track.channel, note + this.$props.track.transpose, velocity, strumDelay);
+          strumDelay += this.$props.track.playMode === "strum" ? 150 : 0;
         }
       }
       this.position += 1;
@@ -130,8 +119,9 @@ export default defineComponent({
     stop() {
       if (this.device === null) return;
       if (this.currentNotes.length === 0) return;
+      if (this.$props.track.channel === undefined) return;
       for (const currentNote of this.currentNotes) {
-        stopNote(this.device, this.channel, currentNote);
+        stopNote(this.device, this.$props.track.channel, currentNote);
       }
       this.currentNotes = [];
     },
@@ -148,24 +138,24 @@ export default defineComponent({
       }
     },
     rythm() {
-      const chosenVelocity = this.rythmDefinition[this.position % this.rythmDefinition.length];
+      const chosenVelocity = this.$props.track.rythmDefinition[this.position % this.$props.track.rythmDefinition.length];
       const restThreshold = 100;
       if (chosenVelocity >= restThreshold) {
-        return (chosenVelocity * this.baseVelocity) / 100;
+        return (chosenVelocity * this.$props.track.baseVelocity) / 100;
       }
       const restProbability = chosenVelocity / restThreshold;
       if (Math.random() >= restProbability) return 0;
-      return (chosenVelocity * this.baseVelocity) / 100;
+      return (chosenVelocity * this.$props.track.baseVelocity) / 100;
     },
     presetChange(newPreset: Preset) {
       console.log("presetChange", newPreset);
       this.preset = newPreset;
-      this.rythmDefinition = newPreset.rythm;
-      this.octaves = newPreset.octaves;
-      this.availableDegrees = newPreset.notes;
-      this.division = newPreset.division;
-      this.playMode = newPreset.playMode;
-      this.relatedTo = newPreset.relatedTo;
+      this.$props.track.rythmDefinition = newPreset.rythm;
+      this.$props.track.octaves = newPreset.octaves;
+      this.$props.track.availableDegrees = newPreset.notes;
+      this.$props.track.division = newPreset.division;
+      this.$props.track.playMode = newPreset.playMode;
+      this.$props.track.relatedTo = newPreset.relatedTo;
     }
   }
 });
@@ -178,17 +168,17 @@ export default defineComponent({
         {{ playing ? position : "S" }}
       </button>
     </td>
-    <td><input class="small" type="number" v-model="channel" /></td>
-    <td><input class="small" type="number" v-model="division" /></td>
-    <td><input class="small" type="number" v-model="gravityCenter" /></td>
-    <td><input class="small" type="number" v-model="gravityStrength" /></td>
+    <td><input class="small" type="number" v-model="$props.track.channel" /></td>
+    <td><input class="small" type="number" v-model="$props.track.division" /></td>
+    <td><input class="small" type="number" v-model="$props.track.gravityCenter" /></td>
+    <td><input class="small" type="number" v-model="$props.track.gravityStrength" /></td>
     <td>
-      <NumberListInput v-model="availableDegrees" />
+      <NumberListInput v-model="$props.track.availableDegrees" />
       <br />
       <span>{{ [...new Set(availableNotes)].map((val: number) => noteNumberToName(val)).join(" ") }}</span>
     </td>
     <td>
-      <select v-model="playMode">
+      <select v-model="$props.track.playMode">
         <option value="nil">----</option>
         <option value="up">Up</option>
         <option value="dn">Down</option>
@@ -199,7 +189,7 @@ export default defineComponent({
       </select>
     </td>
     <td>
-      <select v-model="relatedTo">
+      <select v-model="$props.track.relatedTo">
         <option value="nil">----</option>
         <option value="scale">Scale</option>
         <option value="chord">Chord</option>
@@ -207,11 +197,14 @@ export default defineComponent({
       </select>
     </td>
     <td>
-      <NumberListInput v-model="rythmDefinition" />
+      <NumberListInput v-model="$props.track.rythmDefinition" />
     </td>
-    <td><input class="small" type="number" v-model="baseVelocity" /></td>
+    <td><input class="small" type="number" v-model="$props.track.baseVelocity" /></td>
     <td colspan="2">
-      <PresetSelect :data="presets" @presetChange="presetChange"/>
+      <PresetSelect :data="presets" @preset-change="presetChange"/>
+    </td>
+    <td>
+      <button @click="removeTrack">&times;</button>
     </td>
   </tr>
 </template>
