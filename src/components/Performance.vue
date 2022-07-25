@@ -13,16 +13,19 @@ import TrackList from "./TrackList.vue";
 import type { SongData, SavedSongModel } from "./types";
 import { noteNumberToName } from "@/model/engine";
 import { scales, chords } from "@/model/presets";
+import { download } from "@/utils";
 
 interface Data {
   tracks: TrackModel[]
   songData: SongData
+  fileName: string
 }
 
 export default defineComponent({
   data() {
     return {
       tracks: [] as TrackModel[],
+      fileName: "",
       songData: {
         chordProgression: [1, 1, 4, 4, 6, 5],
         rootNote: 60,
@@ -57,6 +60,7 @@ export default defineComponent({
       const reader = new FileReader();
       reader.addEventListener("load", (e: ProgressEvent<FileReader>) => {
         if (typeof reader.result === "string") {
+          this.fileName = f.name;
           const loadedSongData = JSON.parse(reader.result) as SavedSongModel;
           console.log("loadFile", loadedSongData);
           this.songData.rootNote = loadedSongData.rootNote;
@@ -75,6 +79,18 @@ export default defineComponent({
     },
     newProject() {
       this.tracks = [];
+    },
+    saveFile() {
+      const dataToSave: SavedSongModel = {
+        ...this.songData,
+        tracks: this.tracks.map(track => track.save())
+      }
+      const json = JSON.stringify(dataToSave, undefined, 2);
+      const filename = this.fileName ? (
+        this.fileName.toLowerCase().endsWith(".json") ? this.fileName : this.fileName + ".json"
+      ) : "pastasong.json";
+      download(filename, json);
+      console.log("Data to save", dataToSave);
     }
   }
 });
@@ -140,7 +156,8 @@ export default defineComponent({
           </div>
         </th>
         <th colspan="3">
-          <button id="savesong-btn">Save project</button>
+          <button @click="saveFile">Save project</button>
+          <input type="text" v-model="fileName" placeholder="Choose filename" />
         </th>
       </tr>
     </tfoot>

@@ -23,7 +23,7 @@ export type SavedTrackModel = {
   gravityCenter?: number;
   gravityStrength?: number;
   strumDelay: number;
-  availableDegrees: [];
+  availableDegrees: number[];
   rythmDefinition: number[];
   maxNotes?: number;
   playMode: string;
@@ -86,5 +86,27 @@ export class TrackModel {
     this.availableDegrees = trackData.availableDegrees;
     this.presetId = trackData.presetId;
     this.presetCategory = trackData.presetCategory;
-  }}
+  }
+
+  save() {
+    const dataToSave: SavedTrackModel = {
+      gate: this.gate,
+      transpose: this.transpose,
+      baseVelocity: this.baseVelocity,
+      division: this.division,
+      gravityCenter: this.gravityCenter,
+      gravityStrength: this.gravityStrength,
+      strumDelay: this.strumDelay,
+      rythmDefinition: this.rythmDefinition,
+      maxNotes: this.maxNotes,
+      playMode: this.playMode,
+      relatedTo: this.relatedTo,
+      channel: this.channel,
+      availableDegrees: this.availableDegrees,
+      presetId: this.presetId || "nil",
+      presetCategory: this.presetCategory || "nil",
+    }
+    return dataToSave;
+  }
+}
 
