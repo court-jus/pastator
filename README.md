@@ -22,8 +22,9 @@ You will need a sound generator that listens to MIDI signals and produces sounds
 
 Best way to contribute is to try it and make feedback. You can also clone the repository and submit pull requests.
 
-To develop and test locally, the easiest way to run it is via caddy (then point your browser to http://localhost:2015/)
+To develop and test locally, the easiest way to run it is via npm (then point your browser to http://localhost:5173/)
 
 ```
-caddy run --watch
+npm install
+npm run dev
 ```
