@@ -1,3 +1,4 @@
+import type { SavedTrackModel } from "@/model/TrackModel"
 
 export interface SongData {
   rootNote: number
@@ -5,6 +6,10 @@ export interface SongData {
   currentChord: number
   currentChordType: "triad" | "power" | "sus2" | "sus4" | "sixth" | "seventh" | "ninth" | "eleventh"
   chordProgression: number[]
+}
+
+export interface SavedSongModel extends SongData {
+  tracks: SavedTrackModel[]
 }
 
 export interface Preset {

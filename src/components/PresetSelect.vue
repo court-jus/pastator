@@ -2,7 +2,9 @@
 import type { PresetCategories } from "./types";
 
 interface Props {
-  data: PresetCategories
+  data: PresetCategories,
+  selectedCategory?: string,
+  selectedPreset?: string
 }
 
 defineProps<Props>()
@@ -14,8 +16,8 @@ import { defineComponent } from "vue";
 export default defineComponent({
   data() {
     return {
-      category: "nil",
-      preset: "nil"
+      category: this.$props.selectedCategory || "nil",
+      preset: this.$props.selectedPreset || "nil"
     }
   },
   methods: {
@@ -36,10 +38,19 @@ export default defineComponent({
 <template>
   <select v-model="category">
     <option value="nil">---</option>
-    <option v-for="(, category) of data" :value="category">{{ category }}</option>
+    <option
+      v-for="(, category) of data"
+      :value="category">
+      {{ category }}
+    </option>
   </select>
   <select v-model="preset" @change="handlePresetChange">
     <option value="nil">---</option>
-    <option v-if="category !== 'nil'" v-for="preset of data[category]" :value="preset.id">{{ preset.label }}</option>
+    <option
+      v-if="category !== 'nil'"
+      v-for="preset of data[category]"
+      :value="preset.id">
+      {{ preset.label }}
+    </option>
   </select>
 </template>

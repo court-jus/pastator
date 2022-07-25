@@ -10,13 +10,12 @@ defineProps<Props>()
 import { defineComponent } from "vue";
 import { TrackModel } from "@/model/TrackModel";
 import TrackList from "./TrackList.vue";
-import type { SongData } from "./types";
-import { noteNumberToName } from "../model/engine";
-import { scales, chords } from "../model/presets";
+import type { SongData, SavedSongModel } from "./types";
+import { noteNumberToName } from "@/model/engine";
+import { scales, chords } from "@/model/presets";
 
 interface Data {
   tracks: TrackModel[]
-  chordProgression: number[]
   songData: SongData
 }
 
@@ -24,8 +23,8 @@ export default defineComponent({
   data() {
     return {
       tracks: [] as TrackModel[],
-      chordProgression: [1, 1, 4, 4, 6, 5],
       songData: {
+        chordProgression: [1, 1, 4, 4, 6, 5],
         rootNote: 60,
         scale: "major",
         currentChord: 1,
@@ -36,19 +35,46 @@ export default defineComponent({
   computed: {
     chordProgressionComputed: {
       get() {
-        return this.chordProgression.join(" ");
+        return this.songData.chordProgression.join(" ");
       },
       set(newValue: string) {
-        this.chordProgression = newValue.split(" ").map((val: string) => parseInt(val, 10));
+        this.songData.chordProgression = newValue.split(" ").map((val: string) => parseInt(val, 10));
       }
     }
   },
   methods: {
-    addTrack() {
-      this.tracks.push(new TrackModel());
+    addTrack(track?: TrackModel) {
+      this.tracks.push(track ? track : new TrackModel());
     },
     removeTrack(index: number) {
       this.tracks.splice(index, 1);
+    },
+    loadFile(evt: any) {
+      this.tracks = [];
+      const files = (evt.target as HTMLInputElement).files;
+      if (files === null) return;
+      const f = files[0];
+      const reader = new FileReader();
+      reader.addEventListener("load", (e: ProgressEvent<FileReader>) => {
+        if (typeof reader.result === "string") {
+          const loadedSongData = JSON.parse(reader.result) as SavedSongModel;
+          console.log("loadFile", loadedSongData);
+          this.songData.rootNote = loadedSongData.rootNote;
+          this.songData.scale = loadedSongData.scale;
+          this.songData.currentChord = loadedSongData.currentChord;
+          this.songData.currentChordType = loadedSongData.currentChordType;
+          this.songData.chordProgression = loadedSongData.chordProgression;
+          for (const trackData of loadedSongData.tracks) {
+            const newTrack = new TrackModel();
+            newTrack.load(trackData);
+            this.addTrack(newTrack);
+          }
+        }
+      });
+      reader.readAsText(f);
+    },
+    newProject() {
+      this.tracks = [];
     }
   }
 });
@@ -66,19 +92,17 @@ export default defineComponent({
         <option>major</option>
         <option>minor</option>
       </select>
-      <br/>
-      {{scales[songData.scale].map((val: number) => noteNumberToName(val, false)).join(" ")}}
+      <br />
+      {{ scales[songData.scale].map((val: number) => noteNumberToName(val, false)).join(" ") }}
     </div>
     <div>
       <input v-model.lazy="chordProgressionComputed" />
       <br />
       <input type="number" min="1" max="7" v-model="songData.currentChord" />
       <br />
-      <button
-        v-for="chordDegree of [1, 2, 3, 4, 5, 6, 7]"
-        @click="songData.currentChord = chordDegree"
-        :class="songData.currentChord === chordDegree ? 'active': ''">
-        {{chordDegree}}
+      <button v-for="chordDegree of [1, 2, 3, 4, 5, 6, 7]" @click="songData.currentChord = chordDegree"
+        :class="songData.currentChord === chordDegree ? 'active' : ''">
+        {{ chordDegree }}
       </button>
     </div>
     <div>
@@ -92,30 +116,26 @@ export default defineComponent({
         <option>ninth</option>
         <option>eleventh</option>
       </select>
-      <br/>
-      {{chords[songData.currentChordType].join(" ")}}
+      <br />
+      {{ chords[songData.currentChordType].join(" ") }}
     </div>
   </div>
   <h2>Tracks</h2>
   <table>
-    <TrackList
-      :tracks="tracks"
-      :device="device"
-      :song-data="songData"
-      :clock="clock"
-      :removeTrack="removeTrack"
-      />
+    <TrackList :tracks="tracks" :device="device" :song-data="songData" :clock="clock" :removeTrack="removeTrack" />
     <tfoot>
       <tr>
         <th colspan="2">
-          <button @click="addTrack">Add track</button>
+          <button @click="() => addTrack()">Add track</button>
         </th>
         <th colspan="8">
           <div style="display: flex; align-items: center; justify-content: space-around;">
-            <button id="newsong-btn">New project</button>
+            <button @click="newProject">New project</button>
             <form enctype="multipart/form-data" style="display: flex; align-items: center">
-              <label for="song-file-input">Load project</label>
-              <input id="song-file-input" type="file" accept="application/json" name="song" />
+              <label>
+                Load project
+                <input type="file" accept="application/json" name="song" @change="loadFile" />
+              </label>
             </form>
           </div>
         </th>
@@ -144,12 +164,13 @@ button {
   font-size: 1em;
   border-radius: 5px;
   color: darkslategray;
-  background-color:aliceblue;
+  background-color: aliceblue;
   border: 1px solid darkslategray;
   cursor: pointer;
 }
+
 .active {
   background-color: darkslategray;
-  color:aliceblue;
+  color: aliceblue;
 }
 </style>

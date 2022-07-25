@@ -16,8 +16,8 @@ export class SongModel {
     ];
     this.rootNote = 60;
     this.scale = "major";
-    this.chordProgression = [1, 1, 4, 4, 6, 5];
-    this.currentChord = this.chordProgression[0];
+    this.chordProgression = [];
+    this.currentChord = 1;
     this.currentChordType = "triad";
   }
 

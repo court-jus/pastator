@@ -94,16 +94,16 @@ export default defineComponent({
       const upDn = this.availableNotes.concat(reversed);
       const playedNotes = (
         (this.$props.track.playMode === "atonce" || this.$props.track.playMode === "strum") ?
-        this.availableNotes :
-        this.$props.track.playMode === "random" ?
-        [this.availableNotes[Math.floor(Math.random() * this.availableNotes.length)]] :
-        this.$props.track.playMode === "up" ?
-        [this.availableNotes[this.position % this.availableNotes.length]] :
-        this.$props.track.playMode === "dn" ?
-        [this.availableNotes[this.availableNotes.length - 1 - (this.position % this.availableNotes.length)]] :
-        this.$props.track.playMode === "updn" ?
-        [upDn[this.position % upDn.length]] :
-        [this.availableNotes[0]]
+          this.availableNotes :
+          this.$props.track.playMode === "random" ?
+            [this.availableNotes[Math.floor(Math.random() * this.availableNotes.length)]] :
+            this.$props.track.playMode === "up" ?
+              [this.availableNotes[this.position % this.availableNotes.length]] :
+              this.$props.track.playMode === "dn" ?
+                [this.availableNotes[this.availableNotes.length - 1 - (this.position % this.availableNotes.length)]] :
+                this.$props.track.playMode === "updn" ?
+                  [upDn[this.position % upDn.length]] :
+                  [this.availableNotes[0]]
       );
       const velocity = this.rythm();
       if (velocity > 0 && this.$props.track.channel !== undefined) {
@@ -157,6 +157,9 @@ export default defineComponent({
       this.$props.track.playMode = newPreset.playMode;
       this.$props.track.relatedTo = newPreset.relatedTo;
     }
+  },
+  beforeUnmount() {
+    this.fullStop(true);
   }
 });
 </script>
@@ -201,7 +204,8 @@ export default defineComponent({
     </td>
     <td><input class="small" type="number" v-model="$props.track.baseVelocity" /></td>
     <td colspan="2">
-      <PresetSelect :data="presets" @preset-change="presetChange"/>
+      <PresetSelect :data="presets" :selectedCategory="$props.track.presetCategory"
+        :selectedPreset="$props.track.presetId" @preset-change="presetChange" />
     </td>
     <td>
       <button @click="removeTrack">&times;</button>
