@@ -10,6 +10,7 @@ interface Props {
   songData: SongData
   device: MIDIOutput
   clock: number
+  clockStart: number
   removeTrack: () => void
 }
 defineProps<Props>()
@@ -61,7 +62,9 @@ export default defineComponent({
   },
   watch: {
     clock(newClock: number) {
-      if (!this.playing || this.$props.track.division === 0) return;
+      if (this.$props.track.division === 0) return;
+      this.position = Math.trunc(newClock / this.$props.track.division);
+      if (!this.playing) return;
       if (newClock % this.$props.track.division === 0) {
         if (this.$props.track.gate === 100) this.stop();
         this.play();
@@ -78,13 +81,17 @@ export default defineComponent({
     },
     'songData.currentChord'(newChord: number) {
       if (!this.playing) return;
-      this.stop();
-      this.play();
+      if (this.$props.track.division === 0) {
+        this.stop();
+        this.play();
+      }
     },
     'songData.currentChordType'(newChord: number) {
       if (!this.playing) return;
-      this.stop();
-      this.play();
+      if (this.$props.track.division === 0) {
+        this.stop();
+        this.play();
+      }
     }
   },
   methods: {
@@ -114,7 +121,6 @@ export default defineComponent({
           strumDelay += this.$props.track.playMode === "strum" ? 150 : 0;
         }
       }
-      this.position += 1;
     },
     stop() {
       if (this.device === null) return;
@@ -128,7 +134,6 @@ export default defineComponent({
     fullStop(panic = false) {
       if (panic) this.stop();
       this.playing = false;
-      this.position = 0;
     },
     toggleStop() {
       if (this.playing) {
@@ -168,7 +173,8 @@ export default defineComponent({
   <tr>
     <td>
       <button @click="toggleStop">
-        {{ playing ? position : "S" }}
+        {{ position }}
+        {{ playing ? "stop" : "play" }}
       </button>
     </td>
     <td><input class="small" type="number" v-model="$props.track.channel" /></td>

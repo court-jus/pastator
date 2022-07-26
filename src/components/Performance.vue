@@ -19,10 +19,13 @@ interface Data {
   tracks: TrackModel[]
   songData: SongData
   fileName: string
+  position: number
+  playing: boolean
+  barLength: number
 }
 
 export default defineComponent({
-  data() {
+  data(): Data {
     return {
       tracks: [] as TrackModel[],
       fileName: "",
@@ -32,8 +35,11 @@ export default defineComponent({
         scale: "major",
         currentChord: 1,
         currentChordType: "triad"
-      }
-    } as Data
+      },
+      position: 0,
+      playing: false,
+      barLength: 96
+    }
   },
   computed: {
     chordProgressionComputed: {
@@ -42,6 +48,19 @@ export default defineComponent({
       },
       set(newValue: string) {
         this.songData.chordProgression = newValue.split(" ").map((val: string) => parseInt(val, 10));
+      }
+    },
+    relativeZero: function () {
+      return Math.trunc(this.$props.clock / this.barLength - this.position) * this.barLength;
+    }
+  },
+  watch: {
+    clock(newClock, oldClock) {
+      if (newClock % this.barLength === 0) {
+        this.position += 1;
+        if (this.playing) {
+          this.songData.currentChord = this.songData.chordProgression[this.position % this.songData.chordProgression.length];
+        }
       }
     }
   },
@@ -52,13 +71,30 @@ export default defineComponent({
     removeTrack(index: number) {
       this.tracks.splice(index, 1);
     },
-    loadFile(evt: any) {
+    playpause() {
+      this.playing = !this.playing;
+    },
+    stop() {
+      this.playing = false;
+      this.rewind();
+    },
+    rewind() {
+      this.position = 0;
+      if (this.playing) {
+        this.songData.currentChord = this.songData.chordProgression[this.position % this.songData.chordProgression.length];
+      }
+    },
+    panic() {
+      this.stop();
+      // TODO: find a way to send note off for all tracks
+    },
+    loadFile(evt: Event) {
       this.tracks = [];
       const files = (evt.target as HTMLInputElement).files;
       if (files === null) return;
       const f = files[0];
       const reader = new FileReader();
-      reader.addEventListener("load", (e: ProgressEvent<FileReader>) => {
+      reader.addEventListener("load", () => {
         if (typeof reader.result === "string") {
           this.fileName = f.name;
           const loadedSongData = JSON.parse(reader.result) as SavedSongModel;
@@ -99,9 +135,15 @@ export default defineComponent({
 <template>
   <div class="row">
     <div>
+      <button @click="playpause">{{ playing ? "Pause" : "Play" }}</button>
+      <button @click="stop">Stop</button>
+      <button @click="rewind">Rew</button>
+      <button @click="panic">Panic</button>
+    </div>
+    <div>
       <input type="number" v-model="songData.rootNote" />
       <br />
-      <span>{{ clock }}</span>
+      <span>{{ clock }} {{ position }} {{ relativeZero }}</span>
     </div>
     <div>
       <select v-model="songData.scale">
@@ -138,7 +180,7 @@ export default defineComponent({
   </div>
   <h2>Tracks</h2>
   <table>
-    <TrackList :tracks="tracks" :device="device" :song-data="songData" :clock="clock" :removeTrack="removeTrack" />
+    <TrackList :tracks="tracks" :device="device" :song-data="songData" :clock="clock" :clock-start="relativeZero" :removeTrack="removeTrack" />
     <tfoot>
       <tr>
         <th colspan="2">
