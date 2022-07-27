@@ -2,14 +2,10 @@
 import SelectMidiInput from "./components/SelectMidiInput.vue";
 import SelectMidiOutput from "./components/SelectMidiOutput.vue";
 import Performance from "./components/Performance.vue";
-import { getMIDIMessage } from "./model/engine";
+import { getMIDIMessage, isMIDIMessageEvent } from "./model/engine";
 </script>
 
 <script lang="ts">
-
-function isMIDIMessageEvent(event: Event | MIDIMessageEvent): event is MIDIMessageEvent {
-  return (event as MIDIMessageEvent).data !== undefined;
-};
 
 interface Tour {
   target: string
@@ -143,7 +139,7 @@ export default {
   <section class="main-section">
     <div v-if="midiOutputDevice && midiClockDevice">
       <h1>Performance</h1>
-      <Performance :device="midiOutputDevice" :clock="clock" />
+      <Performance :device="midiOutputDevice" :clock="clock" :cc-device="midiCCDevice" />
     </div>
   </section>
   <section class="topright-section">
@@ -158,11 +154,11 @@ export default {
           <SelectMidiOutput :modelValue="midiOutputDevice" @update:modelValue="newValue => midiOutputDevice = newValue"
             :midi="midiSystem" />
         </li>
-        <li id="midi-cc-in">Midi CC:
+        <li id="midi-cc-in" v-if="midiOutputDevice && midiClockDevice">Midi CC:
           <SelectMidiInput :modelValue="midiCCDevice" @update:modelValue="newValue => midiCCDevice = newValue"
             :midi="midiSystem" />
         </li>
-        <li id="midi-cc-in">Midi Notes:
+        <li id="midi-notes-in" v-if="midiOutputDevice && midiClockDevice">Midi Notes:
           <SelectMidiInput :modelValue="midiNotesDevice" @update:modelValue="newValue => midiNotesDevice = newValue"
             :midi="midiSystem" />
         </li>

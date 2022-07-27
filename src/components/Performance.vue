@@ -2,6 +2,7 @@
 interface Props {
   clock: number
   device: MIDIOutput
+  ccDevice?: MIDIInput
 }
 defineProps<Props>()
 </script>
@@ -11,7 +12,7 @@ import { defineComponent } from "vue";
 import { TrackModel } from "@/model/TrackModel";
 import TrackList from "./TrackList.vue";
 import type { SongData, SavedSongModel } from "@/model/types";
-import { noteNumberToName } from "@/model/engine";
+import { noteNumberToName, isMIDIMessageEvent, getMIDIMessage } from "@/model/engine";
 import { scales, chords } from "@/model/presets";
 import { download } from "@/utils";
 
@@ -60,6 +61,25 @@ export default defineComponent({
         this.position += 1;
         if (this.playing) {
           this.songData.currentChord = this.songData.chordProgression[this.position % this.songData.chordProgression.length];
+        }
+      }
+    },
+    ccDevice(newDevice: MIDIInput, oldDevice: MIDIInput | undefined) {
+      if (oldDevice !== undefined) {
+        oldDevice.onmidimessage = null;
+        oldDevice.close();
+      }
+      newDevice.onmidimessage = (message) => {
+        if (isMIDIMessageEvent(message)) {
+          const m = getMIDIMessage(message);
+          if (m.type === "Control Change") {
+            const [ , cc, val] = Array.from(m.data);
+            for (let trackIndex = 0; trackIndex < this.tracks.length; trackIndex++) {
+              if (trackIndex === m.channel as number - 1) {
+                this.tracks[trackIndex].receiveCC(cc, val);
+              }
+            }
+          }
         }
       }
     }

@@ -118,6 +118,7 @@ export class TrackModel {
   }
 
   // MIDI
+  // NoteOn
   emit(songData: SongData) {
     const availableNotes = this.availableNotes(songData);
     const reversed = [...availableNotes].reverse();
@@ -145,6 +146,7 @@ export class TrackModel {
       }
     }
   }
+  // NoteOff
   stop() {
     if (this.currentNotes.length === 0) return;
     if (this.channel === undefined) return;
@@ -152,6 +154,18 @@ export class TrackModel {
       stopNote(this.device, this.channel, currentNote);
     }
     this.currentNotes = [];
+  }
+  // CC
+  receiveCC(cc: number, val: number) {
+    if (cc === 1) {
+      this.gravityCenter = val;
+    } else if (cc === 2) {
+      this.gravityStrength = val;
+    } else if (cc === 4) {
+      this.baseVelocity = val;
+    } else {
+      console.log("I got CC", cc, val);
+    }
   }
 
   // Music

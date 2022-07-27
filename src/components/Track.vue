@@ -91,10 +91,7 @@ export default defineComponent({
         {{ $props.track.playing ? "stop" : "play" }}
       </button>
     </td>
-    <td>
-      <input class="small" type="number" v-model="$props.track.channel" /><br />
-      {{ $props.track.device?.name }}
-    </td>
+    <td><input class="small" type="number" v-model="$props.track.channel" /></td>
     <td><input class="small" type="number" v-model="$props.track.division" /></td>
     <td><input class="small" type="number" v-model="$props.track.gravityCenter" /></td>
     <td><input class="small" type="number" v-model="$props.track.gravityStrength" /></td>

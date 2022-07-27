@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SongData } from "./types";
+import type { SongData } from "@/model/types";
 type TrackList = TrackModel[];
 
 interface Props {

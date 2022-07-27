@@ -1,5 +1,5 @@
 import { scales, chords } from "./presets";
-import type { SongData } from "@/components/types";
+import type { SongData } from "@/model/types";
 
 export const getNotes = (song: SongData, notes: number[], octaves: number[], relatedTo: string) => {
   if (relatedTo === "static") {
@@ -50,6 +50,12 @@ export const noteNumberToName = (note: number, showOctave = true): string => {
   const octave = Math.trunc(note / 12) - 1;
   return /* note.toString() + ":" + */noteName + (showOctave ? octave.toString(): "");
 };
+
+
+export function isMIDIMessageEvent(event: Event | MIDIMessageEvent): event is MIDIMessageEvent {
+  return (event as MIDIMessageEvent).data !== undefined;
+};
+
 
 export const getMIDIMessage = (message: MIDIMessageEvent) => {
   let type = "";
