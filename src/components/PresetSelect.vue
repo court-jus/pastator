@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PresetCategories } from "./types";
+import type { PresetCategories } from "@/model/types";
 
 interface Props {
   data: PresetCategories,

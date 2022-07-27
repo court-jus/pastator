@@ -1,5 +1,5 @@
 "use strict";
-import type { PresetCategories } from "@/components/types";
+import type { PresetCategories } from "@/model/types";
 
 export const presets: PresetCategories = {
   bass: [
