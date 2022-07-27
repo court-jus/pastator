@@ -12,7 +12,14 @@
   },
   "dependencies": {
     "vue": "^3.2.37",
-    "vue3-tour": "^0.3.1"
+    "vue3-tour": "^0.3.1",
+    "easymidi": "^2.1.0",
+    "express": "^4.18.1",
+    "http": "^0.0.1-security",
+    "midi": "^2.0.0",
+    "path": "^0.12.7",
+    "socket.io": "^4.5.1",
+    "socket.io-client": "^4.5.1"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.1.0",
