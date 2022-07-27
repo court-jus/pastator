@@ -10,7 +10,7 @@ defineProps<Props>()
 import { defineComponent } from "vue";
 import { TrackModel } from "@/model/TrackModel";
 import TrackList from "./TrackList.vue";
-import type { SongData, SavedSongModel } from "./types";
+import type { SongData, SavedSongModel } from "@/model/types";
 import { noteNumberToName } from "@/model/engine";
 import { scales, chords } from "@/model/presets";
 import { download } from "@/utils";
@@ -66,16 +66,30 @@ export default defineComponent({
   },
   methods: {
     addTrack(track?: TrackModel) {
-      this.tracks.push(track ? track : new TrackModel());
+      this.tracks.push(track ? track : new TrackModel(this.$props.device));
     },
     removeTrack(index: number) {
       this.tracks.splice(index, 1);
     },
-    playpause() {
+    playpause(all = true) {
       this.playing = !this.playing;
+      if (all) {
+        for(const track of this.tracks) {
+          if (this.playing) {
+            track.play();
+          } else {
+            track.fullStop();
+          }
+        }
+      }
     },
-    stop() {
+    stop(all = true) {
       this.playing = false;
+      if (all) {
+        for(const track of this.tracks) {
+          track.fullStop();
+        }
+      }
       this.rewind();
     },
     rewind() {
@@ -86,7 +100,9 @@ export default defineComponent({
     },
     panic() {
       this.stop();
-      // TODO: find a way to send note off for all tracks
+      for(const track of this.tracks) {
+        track.fullStop(true);
+      }
     },
     loadFile(evt: Event) {
       this.tracks = [];
@@ -105,7 +121,7 @@ export default defineComponent({
           this.songData.currentChordType = loadedSongData.currentChordType;
           this.songData.chordProgression = loadedSongData.chordProgression;
           for (const trackData of loadedSongData.tracks) {
-            const newTrack = new TrackModel();
+            const newTrack = new TrackModel(this.$props.device);
             newTrack.load(trackData);
             this.addTrack(newTrack);
           }
@@ -135,8 +151,8 @@ export default defineComponent({
 <template>
   <div class="row">
     <div>
-      <button @click="playpause">{{ playing ? "Pause" : "Play" }}</button>
-      <button @click="stop">Stop</button>
+      <button @click="() => { playpause(true); }">{{ playing ? "Pause" : "Play" }}</button>
+      <button @click="() => { stop(true); } ">Stop</button>
       <button @click="rewind">Rew</button>
       <button @click="panic">Panic</button>
     </div>

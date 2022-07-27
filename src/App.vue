@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import SelectMidiInput from "./components/SelectMidiInput.vue";
 import SelectMidiOutput from "./components/SelectMidiOutput.vue";
-import { ProjectModel } from "./model/ProjectModel";
 import Performance from "./components/Performance.vue";
 import { getMIDIMessage } from "./model/engine";
 </script>
@@ -20,8 +19,9 @@ interface Tour {
 interface AppData {
   midiClockDevice?: MIDIInput
   midiOutputDevice?: MIDIOutput
+  midiCCDevice?: MIDIInput
+  midiNotesDevice?: MIDIInput
   midiSystem?: MIDIAccess
-  project: ProjectModel
   clock: number
   tours: Record<string, Tour[]>
   tourCallbacks: Record<string, (() => {}) | undefined>
@@ -32,8 +32,9 @@ export default {
     return {
       midiClockDevice: undefined,
       midiOutputDevice: undefined,
+      midiCCDevice: undefined,
+      midiNotesDevice: undefined,
       midiSystem: undefined,
-      project: new ProjectModel(),
       clock: 0,
       tours: {
         main: [
@@ -155,6 +156,14 @@ export default {
         </li>
         <li id="midi-out-selection">Output:
           <SelectMidiOutput :modelValue="midiOutputDevice" @update:modelValue="newValue => midiOutputDevice = newValue"
+            :midi="midiSystem" />
+        </li>
+        <li id="midi-cc-in">Midi CC:
+          <SelectMidiInput :modelValue="midiCCDevice" @update:modelValue="newValue => midiCCDevice = newValue"
+            :midi="midiSystem" />
+        </li>
+        <li id="midi-cc-in">Midi Notes:
+          <SelectMidiInput :modelValue="midiNotesDevice" @update:modelValue="newValue => midiNotesDevice = newValue"
             :midi="midiSystem" />
         </li>
       </ul>
