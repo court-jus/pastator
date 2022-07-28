@@ -44,6 +44,7 @@ export default defineComponent({});
       :song-data="songData"
       :clock="clock"
       :clock-start="clockStart"
+      :viewType="'row'"
       :remove-track="() => removeTrack(index)" />
   </tbody>
 </template>

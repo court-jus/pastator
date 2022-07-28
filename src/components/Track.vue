@@ -12,6 +12,13 @@ interface Props {
   clock: number
   clockStart: number
   removeTrack: () => void
+  viewType: string
+}
+
+interface Data {
+  lastNotes: number[]
+  preset?: Preset
+  localViewType: string
 }
 defineProps<Props>()
 </script>
@@ -21,10 +28,10 @@ import { defineComponent } from "vue";
 import { presets } from "@/model/presets";
 
 export default defineComponent({
-  data() {
+  data(): Data {
     return {
-      lastNotes: [] as number[],
-      preset: undefined as Preset | undefined
+      lastNotes: [],
+      localViewType: ""
     }
   },
   computed: {
@@ -38,6 +45,9 @@ export default defineComponent({
       set(newValue: string) {
         this.$props.track.rythmDefinition = newValue.split(" ").map((val: string) => parseInt(val, 10));
       }
+    },
+    computedView: function() {
+      return this.localViewType ? this.localViewType : this.$props.viewType;
     }
   },
   watch: {
@@ -84,7 +94,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <tr>
+  <tr v-if="computedView === 'row'">
     <td>
       <button @click="$props.track.playpause">
         {{ $props.track.position }}
@@ -137,6 +147,23 @@ export default defineComponent({
     </td>
     <td>
       <button @click="removeTrack">&times;</button>
+      <button @click="() => { localViewType = 'expand' }">v</button>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="50">
+    <div>
+      <button @click="$props.track.playpause">
+        {{ $props.track.playing ? "stop" : "play" }}
+      </button>
+      C: <input class="small" type="number" v-model="$props.track.gravityCenter" />
+      S: <input class="small" type="number" v-model="$props.track.gravityStrength" />
+      D: <input class="small" type="number" v-model="$props.track.rythmDensity" />
+      P: <input class="small" type="number" v-model="$props.track.proba" />
+      A: <input class="small" type="number" v-model="$props.track.velAmplitude" />
+      C: <input class="small" type="number" v-model="$props.track.velCenter" />
+      <button @click="() => { localViewType = '' }">^</button>
+    </div>
     </td>
   </tr>
 </template>
