@@ -120,12 +120,20 @@ export default defineComponent({
       </select>
     </td>
     <td>
-      <NumberListInput v-model="$props.track.rythmDefinition" />
+      <NumberListInput v-model="$props.track.rythmDefinition" /><br />
+      <div>
+        D<input class="small" type="number" v-model="$props.track.rythmDensity" />
+        P<input class="small" type="number" v-model="$props.track.proba" />
+        A<input class="small" type="number" v-model="$props.track.velAmplitude" />
+        C<input class="small" type="number" v-model="$props.track.velCenter" />
+      </div>
+    </td>
+    <td>
     </td>
     <td><input class="small" type="number" v-model="$props.track.baseVelocity" /></td>
     <td colspan="2">
       <PresetSelect :data="presets" :selectedCategory="$props.track.presetCategory"
-        :selectedPreset="$props.track.presetId" @preset-change="$props.track.presetChange" />
+        :selectedPreset="$props.track.presetId" @preset-change="(newPreset) => { $props.track.presetChange(newPreset); }" />
     </td>
     <td>
       <button @click="removeTrack">&times;</button>
@@ -136,7 +144,7 @@ export default defineComponent({
 
 <style scoped>
 .small {
-  width: 60px;
+  width: 46px;
 }
 
 tr {

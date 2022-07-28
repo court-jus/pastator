@@ -11,13 +11,17 @@ export type SavedTrackModel = {
   strumDelay: number;
   availableDegrees: number[];
   rythmDefinition: number[];
+  rythmDensity?: number;
+  velAmplitude?: number;
+  velCenter?: number;
+  proba?: number;
   maxNotes?: number;
   playMode: string;
   relatedTo: string;
   channel: number;
   presetId: string;
   presetCategory: string;
-}
+};
 
 export class TrackModel {
   device: MIDIOutput;
@@ -31,6 +35,10 @@ export class TrackModel {
   baseVelocity: number;
   strumDelay: number;
   rythmDefinition: number[];
+  rythmDensity?: number;
+  velAmplitude?: number;
+  velCenter?: number;
+  proba?: number;
   position: number;
   playing: boolean;
   timeout?: number;
@@ -79,6 +87,10 @@ export class TrackModel {
     this.availableDegrees = trackData.availableDegrees;
     this.presetId = trackData.presetId;
     this.presetCategory = trackData.presetCategory;
+    this.rythmDensity = trackData.rythmDensity;
+    this.proba = trackData.proba;
+    this.velAmplitude = trackData.velAmplitude;
+    this.velCenter = trackData.velCenter;
   }
   save() {
     const dataToSave: SavedTrackModel = {
@@ -97,7 +109,11 @@ export class TrackModel {
       availableDegrees: this.availableDegrees,
       presetId: this.presetId || "nil",
       presetCategory: this.presetCategory || "nil",
-    }
+      rythmDensity: this.rythmDensity,
+      proba: this.proba,
+      velAmplitude: this.velAmplitude,
+      velCenter: this.velCenter,
+    };
     return dataToSave;
   }
 
@@ -123,25 +139,36 @@ export class TrackModel {
     const availableNotes = this.availableNotes(songData);
     const reversed = [...availableNotes].reverse();
     const upDn = availableNotes.concat(reversed);
-    const playedNotes = (
-      (this.playMode === "atonce" || this.playMode === "strum") ?
-        availableNotes :
-        this.playMode === "random" ?
-          [availableNotes[Math.floor(Math.random() * availableNotes.length)]] :
-          this.playMode === "up" ?
-            [availableNotes[this.position % availableNotes.length]] :
-            this.playMode === "dn" ?
-              [availableNotes[availableNotes.length - 1 - (this.position % availableNotes.length)]] :
-              this.playMode === "updn" ?
-                [upDn[this.position % upDn.length]] :
-                [availableNotes[0]]
-    );
+    const playedNotes =
+      this.playMode === "atonce" || this.playMode === "strum"
+        ? availableNotes
+        : this.playMode === "random"
+        ? [availableNotes[Math.floor(Math.random() * availableNotes.length)]]
+        : this.playMode === "up"
+        ? [availableNotes[this.position % availableNotes.length]]
+        : this.playMode === "dn"
+        ? [
+            availableNotes[
+              availableNotes.length -
+                1 -
+                (this.position % availableNotes.length)
+            ],
+          ]
+        : this.playMode === "updn"
+        ? [upDn[this.position % upDn.length]]
+        : [availableNotes[0]];
     const velocity = this.rythm();
     if (velocity > 0 && this.channel !== undefined) {
       let strumDelay = 0;
       for (const note of playedNotes) {
         this.currentNotes.push(note + this.transpose);
-        playNote(this.device, this.channel, note + this.transpose, velocity, strumDelay);
+        playNote(
+          this.device,
+          this.channel,
+          note + this.transpose,
+          velocity,
+          strumDelay
+        );
         strumDelay += this.playMode === "strum" ? 150 : 0;
       }
     }
@@ -170,8 +197,16 @@ export class TrackModel {
 
   // Music
   availableNotes(songData: SongData) {
-    const candidateNotes = getNotes(songData, this.availableDegrees, this.octaves, this.relatedTo);
-    if (this.gravityCenter === undefined || this.gravityStrength === undefined) {
+    const candidateNotes = getNotes(
+      songData,
+      this.availableDegrees,
+      this.octaves,
+      this.relatedTo
+    );
+    if (
+      this.gravityCenter === undefined ||
+      this.gravityStrength === undefined
+    ) {
       return candidateNotes;
     }
     const margin = Math.trunc((140 - this.gravityStrength) / 2);
@@ -190,17 +225,36 @@ export class TrackModel {
     });
   }
   rythm() {
-    const chosenVelocity = this.rythmDefinition[this.position % this.rythmDefinition.length];
+    if (this.rythmDensity) {
+      // Euclidean Rythm
+      this.rythmDefinition = [];
+      for (let p = 0; p < 64; p++) {
+        const x = p % 64;
+        const xprev = (x - 1) % 64;
+        const prev_value = Math.floor((xprev * this.rythmDensity) / 64);
+        const new_value = Math.floor((x * this.rythmDensity) / 64);
+        let velocity = 100;
+        if (this.velAmplitude !== undefined) {
+          const center = this.velCenter !== undefined ? this.velCenter : 50;
+          velocity = Math.floor(
+            Math.random() * this.velAmplitude - this.velAmplitude / 2 + center
+          );
+        }
+        this.rythmDefinition.push(prev_value !== new_value ? velocity : 0);
+      }
+    }
+    const chosenVelocity =
+      this.rythmDefinition[this.position % this.rythmDefinition.length];
     const restThreshold = 100;
     if (chosenVelocity >= restThreshold) {
       return (chosenVelocity * this.baseVelocity) / 100;
     }
-    const restProbability = chosenVelocity / restThreshold;
-    if (Math.random() >= restProbability) return 0;
+    const playProbability =
+      (this.proba !== undefined ? this.proba : chosenVelocity) / restThreshold;
+    if (Math.random() >= playProbability) return 0;
     return (chosenVelocity * this.baseVelocity) / 100;
   }
   presetChange(newPreset: Preset) {
-    console.log("presetChange", newPreset);
     this.preset = newPreset;
     this.rythmDefinition = newPreset.rythm;
     this.octaves = newPreset.octaves;
@@ -210,4 +264,3 @@ export class TrackModel {
     this.relatedTo = newPreset.relatedTo;
   }
 }
-
