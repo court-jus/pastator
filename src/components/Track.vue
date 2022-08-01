@@ -64,7 +64,7 @@ export default defineComponent({
       } else if (this.$props.track.gate < 100) {
         const pcLow = ((newClock % this.$props.track.division) / this.$props.track.division) * 100;
         const pcHigh = (((newClock + 1) % this.$props.track.division) / this.$props.track.division) * 100;
-        if (pcLow < this.$props.track.gate && pcHigh >= this.$props.track.gate) {
+        if (pcHigh < pcLow || pcLow < this.$props.track.gate && pcHigh >= this.$props.track.gate) {
           this.$props.track.stop();
         }
       }
