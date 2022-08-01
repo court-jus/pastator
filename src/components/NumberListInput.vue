@@ -15,7 +15,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <input :value="modelValue.join(' ')" @change="
+  <input class="form-control" :value="modelValue.join(' ')" @change="
     $emit(
       'update:modelValue',
       ($event.target as HTMLInputElement).value.split(' ').map(

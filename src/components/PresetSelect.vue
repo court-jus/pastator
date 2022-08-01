@@ -36,21 +36,24 @@ export default defineComponent({
 </script>
 
 <template>
-  <select v-model="category">
-    <option value="nil">---</option>
-    <option
-      v-for="(, category) of data"
-      :value="category">
-      {{ category }}
-    </option>
-  </select>
-  <select v-model="preset" @change="handlePresetChange">
-    <option value="nil">---</option>
-    <option
-      v-if="category !== 'nil'"
-      v-for="preset of data[category]"
-      :value="preset.id">
-      {{ preset.label }}
-    </option>
-  </select>
+  <div class="input-group" role="group">
+    <span class="input-group-text">Preset</span>
+    <select class="form-select" v-model="category">
+      <option value="nil">---</option>
+      <option
+        v-for="(, category) of data"
+        :value="category">
+        {{ category }}
+      </option>
+    </select>
+    <select class="form-select" v-model="preset" @change="handlePresetChange">
+      <option value="nil">---</option>
+      <option
+        v-if="category !== 'nil'"
+        v-for="preset of data[category]"
+        :value="preset.id">
+        {{ preset.label }}
+      </option>
+    </select>
+  </div>
 </template>

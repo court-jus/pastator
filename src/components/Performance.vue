@@ -267,6 +267,9 @@ export default defineComponent({
     if (localStorage.getItem("skipPerfTour") !== "true") {
       this.$tours["perfTour"].start();
     }
+    this.addTrack();
+    this.addTrack();
+    this.addTrack();
   }
 });
 </script>
@@ -277,49 +280,56 @@ export default defineComponent({
   <div class="flex-column">
     <h1>Performance</h1>
     <div id="performance-zone" class="flex-row flex-justify">
-      <div id="transport-buttons">
-        <button @click="() => { playpause(true); }">{{ playing ? "Pause" : "Play" }}</button>
-        <button @click="() => { stop(true); }">Stop</button>
-        <button @click="rewind">Rew</button>
-        <button @click="panic">Panic</button>
+      <div class="btn-group" role="group" id="transport-buttons">
+        <button class="btn btn-small btn-outline-primary" @click="() => { playpause(true); }">
+          <i :class="'bi bi-' + (playing ? 'pause' : 'play') + '-fill'"></i>
+        </button>
+        <button class="btn btn-small btn-outline-primary" @click="() => { stop(true); }">
+          <i class="bi bi-stop-fill"></i>
+        </button>
+        <button class="btn btn-small btn-outline-primary" @click="rewind">
+          <i class="bi bi-rewind-fill"></i>
+        </button>
+        <button class="btn btn-small btn-outline-primary" @click="panic">
+          <i class="bi bi-volume-mute-fill"></i>
+        </button>
       </div>
       <div id="key-parameters">
-        <div>
-          <input type="number" v-model="songData.rootNote" />
-          <br />
-          <span>{{ clock }} {{ position }} {{ relativeZero }}</span>
-        </div>
-        <div>
-          <select v-model="songData.scale">
+        <div class="input-group">
+          <span class="input-group-text">Root</span>
+          <input class="form-control" type="number" v-model="songData.rootNote" />
+          <span class="input-group-text">Mode</span>
+          <select class="form-select" v-model="songData.scale">
             <option>major</option>
             <option>minor</option>
           </select>
-          <br />
-          {{ scales[songData.scale].map((val: number) => noteNumberToName(val, false)).join(" ") }}
+          <span class="input-group-text">{{ scales[songData.scale].map((val: number) => noteNumberToName(val, false)).join(" ") }}</span>
         </div>
       </div>
       <div id="chords-control">
-        <input id="chord-progression" v-model.lazy="chordProgressionComputed" />
-        <br />
-        <input type="number" min="1" max="7" v-model="songData.currentChord" class="hidden" />
-        <button v-for="chordDegree of [1, 2, 3, 4, 5, 6, 7]" @click="songData.currentChord = chordDegree"
-          :class="songData.currentChord === chordDegree ? 'active' : ''">
-          {{ chordDegree }}
-        </button>
-      </div>
-      <div>
-        <select id="chord-type" v-model="songData.currentChordType">
-          <option>triad</option>
-          <option>power</option>
-          <option>sus2</option>
-          <option>sus4</option>
-          <option>sixth</option>
-          <option>seventh</option>
-          <option>ninth</option>
-          <option>eleventh</option>
-        </select>
-        <br />
+        <div class="input-group">
+          <input class="form-control" id="chord-progression" v-model.lazy="chordProgressionComputed" />
+          <select class="form-select" id="chord-type" v-model="songData.currentChordType">
+            <option>triad</option>
+            <option>power</option>
+            <option>sus2</option>
+            <option>sus4</option>
+            <option>sixth</option>
+            <option>seventh</option>
+            <option>ninth</option>
+            <option>eleventh</option>
+          </select>
+        </div>
+        <input class="form-control hidden" type="number" min="1" max="7" v-model="songData.currentChord" />
+        <div class="btn-group" role="group">
+          <button class="btn btn-small btn-outline-primary" v-for="chordDegree of [1, 2, 3, 4, 5, 6, 7]" @click="songData.currentChord = chordDegree"
+            :class="songData.currentChord === chordDegree ? 'active' : ''">
+            {{ chordDegree }}
+          </button>
+        </div>
+        <span class="push-right">
         {{ chords[songData.currentChordType].join(" ") }}
+        </span>
       </div>
     </div>
     <div class="flex-column">
@@ -345,23 +355,4 @@ export default defineComponent({
 
 
 <style scoped>
-
-button {
-  border: none;
-  padding: 1px 6px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 1em;
-  border-radius: 5px;
-  color: darkslategray;
-  background-color: aliceblue;
-  border: 1px solid darkslategray;
-  cursor: pointer;
-}
-
-.active {
-  background-color: darkslategray;
-  color: aliceblue;
-}
 </style>

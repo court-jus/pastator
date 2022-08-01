@@ -18,13 +18,36 @@ import { defineComponent } from "vue";
 import Track from "./Track.vue";
 import type { TrackModel } from "../model/TrackModel";
 
-export default defineComponent({});
+export default defineComponent({
+  data() {
+    return {
+      viewType: 'reduced'
+    };
+  },
+  methods: {
+    cycleView() {
+      if (this.viewType === 'reduced') {
+        this.viewType = 'expand';
+      } else if (this.viewType === 'expand') {
+        this.viewType = 'perf';
+      } else if (this.viewType === 'perf') {
+        this.viewType = 'reduced';
+      }
+    }
+  }
+});
 </script>
 
 
 <template>
   <div class="flex-column">
-    <h2>Tracks</h2>
+    <h2>
+      Tracks
+      <button class="btn btn-outline-primary change-track-view" @click="cycleView">
+        <i class="bi bi-eye-fill"></i>
+        {{ viewType }}
+      </button>
+    </h2>
     <div id="track-list">
       <Track
         v-for="(track, index) of tracks"
@@ -33,7 +56,7 @@ export default defineComponent({});
         :song-data="songData"
         :clock="clock"
         :clock-start="clockStart"
-        :viewType="'row'"
+        :viewType="viewType"
         :remove-track="() => removeTrack(index)" />
     </div>
   </div>

@@ -34,6 +34,17 @@ export default defineComponent({
       localViewType: ""
     }
   },
+  methods: {
+    cycleView() {
+      if (!this.localViewType) {
+        this.localViewType = 'expand'
+      } else if (this.localViewType === 'expand') {
+        this.localViewType = 'perf';
+      } else if (this.localViewType === 'perf') {
+        this.localViewType = '';
+      }
+    }
+  },
   computed: {
     availableNotes: function () {
       return this.$props.track.availableNotes(this.songData);
@@ -94,79 +105,129 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="flex-row flex-justify" v-if="computedView === 'row'">
-    <button @click="$props.track.playpause" class="playpause-track" title="Play/Pause track">
-      {{ $props.track.position }}
-      {{ $props.track.playing ? "stop" : "play" }}
-    </button>
-    <input class="choose-track-channel small" type="number" v-model="$props.track.channel" title="MIDI Channel driven by this track"/>
-    <td class="choose-track-division"><input class="small" type="number" v-model="$props.track.division" /></td>
-    <td class="choose-track-gravity-center"><input class="small" type="number" v-model="$props.track.gravityCenter" /></td>
-    <td class="choose-track-gravity-strength"><input class="small" type="number" v-model="$props.track.gravityStrength" /></td>
-    <td class="edit-track-notes">
-      <NumberListInput v-model="$props.track.availableDegrees" />
-      <br />
-      <span>{{ [...new Set(availableNotes)].map((val: number) => noteNumberToName(val)).join(" ") }}</span>
-    </td>
-    <td class="choose-track-play-mode">
-      <select v-model="$props.track.playMode">
-        <option value="nil">----</option>
-        <option value="up">Up</option>
-        <option value="dn">Down</option>
-        <option value="updn">UpDown</option>
-        <option value="random">Random</option>
-        <option value="atonce">Chord</option>
-        <option value="strum">Strum</option>
-      </select>
-    </td>
-    <td class="choose-track-related-to">
-      <select v-model="$props.track.relatedTo">
-        <option value="nil">----</option>
-        <option value="scale">Scale</option>
-        <option value="chord">Chord</option>
-        <option value="static">Static</option>
-      </select>
-    </td>
-    <td class="edit-track-rythm">
-      <NumberListInput v-model="$props.track.rythmDefinition" /><br />
-      <div>
-        D<input class="small" type="number" v-model="$props.track.rythmDensity" />
-        P<input class="small" type="number" v-model="$props.track.proba" />
-        A<input class="small" type="number" v-model="$props.track.velAmplitude" />
-        C<input class="small" type="number" v-model="$props.track.velCenter" />
+  <div class="row">
+    <div class="col-12">
+      <div class="row">
+        <div class="col-2">
+          <div class="btn-group" role="group">
+            <button @click="$props.track.playpause" class="btn btn-outline-primary playpause-track" title="Play/Pause track">
+              <i :class="'bi bi-' + ($props.track.playing ? 'pause' : 'play') + '-fill'"></i>
+            </button>
+            <button class="btn btn-outline-primary remove-track" @click="removeTrack">
+              <i class="bi bi-trash-fill"></i>
+            </button>
+            <button class="btn btn-outline-primary change-track-view" @click="cycleView">
+              <i class="bi bi-eye-fill"></i>
+            </button>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="input-group" role="group">
+            <span class="input-group-text">Channel</span>
+            <input class="form-control form-control-sm choose-track-channel" type="number" v-model="$props.track.channel" title="MIDI Channel driven by this track"/>
+            <span class="input-group-text">Vol.</span>
+            <input class="form-control choose-track-base-velocity" type="number" v-model="$props.track.baseVelocity" />
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="choose-track-preset">
+            <PresetSelect :data="presets" :selectedCategory="$props.track.presetCategory"
+              :selectedPreset="$props.track.presetId" @preset-change="(newPreset) => { $props.track.presetChange(newPreset); }" />
+          </div>
+        </div>
       </div>
-    </td>
-    <td class="choose-track-base-velocity"><input class="small" type="number" v-model="$props.track.baseVelocity" /></td>
-    <td class="choose-track-preset" colspan="2">
-      <PresetSelect :data="presets" :selectedCategory="$props.track.presetCategory"
-        :selectedPreset="$props.track.presetId" @preset-change="(newPreset) => { $props.track.presetChange(newPreset); }" />
-    </td>
-    <td>
-      <button class="remove-track" @click="removeTrack">&times;</button>
-      <button class="change-track-view" @click="() => { localViewType = 'expand' }">v</button>
-    </td>
-  </div>
-  <div class="flex-row flex-justify" v-if="computedView === 'expand'">
-    <div>
-      <button @click="$props.track.playpause">
-        {{ $props.track.playing ? "stop" : "play" }}
-      </button>
-      C: <input class="small" type="number" v-model="$props.track.gravityCenter" />
-      S: <input class="small" type="number" v-model="$props.track.gravityStrength" />
-      D: <input class="small" type="number" v-model="$props.track.rythmDensity" />
-      P: <input class="small" type="number" v-model="$props.track.proba" />
-      A: <input class="small" type="number" v-model="$props.track.velAmplitude" />
-      C: <input class="small" type="number" v-model="$props.track.velCenter" />
-      <button @click="() => { localViewType = '' }">^</button>
+    </div>
+    <div class="col-12" v-if="computedView === 'expand'">
+      <div class="row">
+        <div class="col-6">
+          <div class="edit-track-notes input-group">
+            <span class="input-group-text">Degrees</span>
+            <NumberListInput v-model="$props.track.availableDegrees" />
+            <span class="input-group-text">{{ [...new Set(availableNotes)].map((val: number) => noteNumberToName(val)).join(" ") }}</span>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="input-group" role="group">
+            <select class="form-select choose-track-play-mode" v-model="$props.track.playMode">
+              <option value="nil">----</option>
+              <option value="up">Up</option>
+              <option value="dn">Down</option>
+              <option value="updn">UpDown</option>
+              <option value="random">Random</option>
+              <option value="atonce">Chord</option>
+              <option value="strum">Strum</option>
+            </select>
+            <select class="form-select choose-track-related-to" v-model="$props.track.relatedTo">
+              <option value="nil">----</option>
+              <option value="scale">Scale</option>
+              <option value="chord">Chord</option>
+              <option value="static">Static</option>
+            </select>
+            <span class="input-group-text">Gravity</span>
+            <input class="form-control choose-track-gravity-center" type="number" v-model="$props.track.gravityCenter" />
+            <input class="form-control choose-track-gravity-strength" type="number" v-model="$props.track.gravityStrength" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12" v-if="computedView === 'expand'">
+      <div class="row">
+        <div class="col-8">
+          <div class="edit-track-rythm input-group">
+            <span class="input-group-text">Rythm</span>
+            <NumberListInput v-model="$props.track.rythmDefinition" /><br />
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="input-group" role="group">
+            <span class="input-group-text">Div.</span>
+            <input class="form-control choose-track-division" type="number" v-model="$props.track.division" />
+          </div>
+        </div>
+      </div>
+      <div class="col-12" v-if="computedView === 'expand'">
+        <div class="input-group input-group">
+          <span class="input-group-text">Density</span>
+          <input class="form-control" type="number" v-model="$props.track.rythmDensity" />
+          <span class="input-group-text">Proba.</span>
+          <input class="form-control" type="number" v-model="$props.track.proba" />
+          <span class="input-group-text">V.Ampl.</span>
+          <input class="form-control" type="number" v-model="$props.track.velAmplitude" />
+          <span class="input-group-text">V.Center</span>
+          <input class="form-control" type="number" v-model="$props.track.velCenter" />
+        </div>
+      </div>
+    </div>
+    <div class="col-12" v-if="computedView === 'perf'">
+      <div class="row">
+        <div class="col-3">
+          <div class="input-group" role="group">
+            <span class="input-group-text">Gravity</span>
+            <input class="form-control" type="number" v-model="$props.track.gravityCenter" />
+            <input class="form-control" type="number" v-model="$props.track.gravityStrength" />
+          </div>
+        </div>
+        <div class="col-9">
+          <div class="input-group input-group">
+            <span class="input-group-text">Div.</span>
+            <input class="form-control" type="number" v-model="$props.track.division" />
+            <span class="input-group-text">Density</span>
+            <input class="form-control" type="number" v-model="$props.track.rythmDensity" />
+            <span class="input-group-text">Proba.</span>
+            <input class="form-control" type="number" v-model="$props.track.proba" />
+            <span class="input-group-text">V.Ampl.</span>
+            <input class="form-control" type="number" v-model="$props.track.velAmplitude" />
+            <span class="input-group-text">V.Center</span>
+            <input class="form-control" type="number" v-model="$props.track.velCenter" />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 
 <style scoped>
-.small {
-  width: 46px;
-}
 
 tr {
   vertical-align: top;
