@@ -55,7 +55,7 @@ export class TrackModel {
   constructor(device: MIDIOutput) {
     this.device = device;
     this.channel = 0;
-    this.division = 48;
+    this.division = 96;
     this.gate = 90;
     this.playMode = "random";
     this.relatedTo = "chord";

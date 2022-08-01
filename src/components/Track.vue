@@ -95,22 +95,22 @@ export default defineComponent({
 
 <template>
   <tr v-if="computedView === 'row'">
-    <td>
+    <td class="playpause-track">
       <button @click="$props.track.playpause">
         {{ $props.track.position }}
         {{ $props.track.playing ? "stop" : "play" }}
       </button>
     </td>
-    <td><input class="small" type="number" v-model="$props.track.channel" /></td>
-    <td><input class="small" type="number" v-model="$props.track.division" /></td>
-    <td><input class="small" type="number" v-model="$props.track.gravityCenter" /></td>
-    <td><input class="small" type="number" v-model="$props.track.gravityStrength" /></td>
-    <td>
+    <td class="choose-track-channel"><input class="small" type="number" v-model="$props.track.channel" /></td>
+    <td class="choose-track-division"><input class="small" type="number" v-model="$props.track.division" /></td>
+    <td class="choose-track-gravity-center"><input class="small" type="number" v-model="$props.track.gravityCenter" /></td>
+    <td class="choose-track-gravity-strength"><input class="small" type="number" v-model="$props.track.gravityStrength" /></td>
+    <td class="edit-track-notes">
       <NumberListInput v-model="$props.track.availableDegrees" />
       <br />
       <span>{{ [...new Set(availableNotes)].map((val: number) => noteNumberToName(val)).join(" ") }}</span>
     </td>
-    <td>
+    <td class="choose-track-play-mode">
       <select v-model="$props.track.playMode">
         <option value="nil">----</option>
         <option value="up">Up</option>
@@ -121,7 +121,7 @@ export default defineComponent({
         <option value="strum">Strum</option>
       </select>
     </td>
-    <td>
+    <td class="choose-track-related-to">
       <select v-model="$props.track.relatedTo">
         <option value="nil">----</option>
         <option value="scale">Scale</option>
@@ -129,7 +129,7 @@ export default defineComponent({
         <option value="static">Static</option>
       </select>
     </td>
-    <td>
+    <td class="edit-track-rythm">
       <NumberListInput v-model="$props.track.rythmDefinition" /><br />
       <div>
         D<input class="small" type="number" v-model="$props.track.rythmDensity" />
@@ -138,19 +138,17 @@ export default defineComponent({
         C<input class="small" type="number" v-model="$props.track.velCenter" />
       </div>
     </td>
-    <td>
-    </td>
-    <td><input class="small" type="number" v-model="$props.track.baseVelocity" /></td>
-    <td colspan="2">
+    <td class="choose-track-base-velocity"><input class="small" type="number" v-model="$props.track.baseVelocity" /></td>
+    <td class="choose-track-preset" colspan="2">
       <PresetSelect :data="presets" :selectedCategory="$props.track.presetCategory"
         :selectedPreset="$props.track.presetId" @preset-change="(newPreset) => { $props.track.presetChange(newPreset); }" />
     </td>
     <td>
-      <button @click="removeTrack">&times;</button>
-      <button @click="() => { localViewType = 'expand' }">v</button>
+      <button class="remove-track" @click="removeTrack">&times;</button>
+      <button class="change-track-view" @click="() => { localViewType = 'expand' }">v</button>
     </td>
   </tr>
-  <tr>
+  <tr v-if="computedView === 'expand'">
     <td colspan="50">
     <div>
       <button @click="$props.track.playpause">

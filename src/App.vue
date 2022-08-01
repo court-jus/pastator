@@ -6,11 +6,7 @@ import { getMIDIMessage, isMIDIMessageEvent } from "./model/engine";
 </script>
 
 <script lang="ts">
-
-interface Tour {
-  target: string
-  content: string
-}
+import type { Tour } from "./types";
 
 interface AppData {
   midiClockDevice?: MIDIInput
@@ -19,8 +15,7 @@ interface AppData {
   midiNotesDevice?: MIDIInput
   midiSystem?: MIDIAccess
   clock: number
-  tours: Record<string, Tour[]>
-  tourCallbacks: Record<string, (() => {}) | undefined>
+  tour: Tour
 }
 
 export default {
@@ -32,8 +27,8 @@ export default {
       midiNotesDevice: undefined,
       midiSystem: undefined,
       clock: 0,
-      tours: {
-        main: [
+      tour: {
+        steps: [
           {
             target: ".topleft-section",
             content: "Hi, welcome to Pastator. This quick tour will guide you through the main features. If you finish or skip the tour and want to get back to it later, click the logo."
@@ -46,12 +41,12 @@ export default {
             target: "#midi-out-selection",
             content: "Then select the MIDI device that will receive note events"
           }
-        ]
-      },
-      tourCallbacks: {
-        onFinish: this.onTourFinishedOrSkipped,
-        onSkip: this.onTourFinishedOrSkipped,
-        onStop: this.onTourFinishedOrSkipped,
+        ],
+        callbacks: {
+          onFinish: this.onTourFinishedOrSkipped,
+          onSkip: this.onTourFinishedOrSkipped,
+          onStop: this.onTourFinishedOrSkipped,
+        }
       }
     }
   },
@@ -99,12 +94,12 @@ export default {
   },
   methods: {
     onTourFinishedOrSkipped () {
-      console.log("VUTOUR ENDED");
       localStorage.setItem("skipMainTour", "true");
     },
     onLogoClicked () {
-      console.log("LOGO CLIEKD");
       localStorage.removeItem("skipMainTour");
+      localStorage.removeItem("skipPerfTour");
+      localStorage.removeItem("skipTrackTour");
       this.$tours["mainTour"].start();
     }
   }
@@ -112,7 +107,7 @@ export default {
 </script>
 
 <template>
-  <v-tour name="mainTour" :steps="tours.main" :callbacks="tourCallbacks" :options="{ highlight: true }"></v-tour>
+  <v-tour name="mainTour" :steps="tour.steps" :callbacks="tour.callbacks" :options="{ highlight: true }"></v-tour>
   <section class="topleft-section">
     <div @click="onLogoClicked" class="clickable" title="Click to launch the welcome tour.">
       <svg class="logo-led" width="125" height="125" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
@@ -138,7 +133,6 @@ export default {
   </section>
   <section class="main-section">
     <div v-if="midiOutputDevice && midiClockDevice">
-      <h1>Performance</h1>
       <Performance :device="midiOutputDevice" :clock="clock" :cc-device="midiCCDevice" />
     </div>
   </section>

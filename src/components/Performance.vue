@@ -15,6 +15,7 @@ import type { SongData, SavedSongModel } from "@/model/types";
 import { noteNumberToName, isMIDIMessageEvent, getMIDIMessage } from "@/model/engine";
 import { scales, chords } from "@/model/presets";
 import { download } from "@/utils";
+import type { Tour } from "@/types";
 
 interface Data {
   tracks: TrackModel[]
@@ -23,6 +24,8 @@ interface Data {
   position: number
   playing: boolean
   barLength: number
+  tour: Tour
+  trackTour: Tour
 }
 
 export default defineComponent({
@@ -39,7 +42,101 @@ export default defineComponent({
       },
       position: 0,
       playing: false,
-      barLength: 96
+      barLength: 96,
+      tour: {
+        steps: [{
+          target: "#performance-zone",
+          content: "This is the main performance control zone. It allows you to define the global parameters of your performance such as key, chord progression and to control them while playing."
+        }, {
+          target: "#transport-buttons",
+          content: "The transport buttons allow to control all tracks at once (play, stop, rew) and to send NoteOff messages to your synth (panic)."
+        }, {
+          target: "#key-parameters",
+          content: "Here you can define the root note and scale type or mode you want to use."
+        }, {
+          target: "#chords-control",
+          content: "Here you can configure the chord progression or manually trigger chords using the dedicated buttons."
+        }, {
+          target: "#chord-progression",
+          content: "You'll see more fields like this one later, they expect you to input numbers separated by spaces."
+        }, {
+          target: "#chord-type",
+          content: "Finally you can choose here the chord type or flavor you want."
+        }, {
+          target: "#add-track",
+          content: "Now, click Finish to close this tour then click the Add track button to start creating a new song"
+        }],
+        callbacks: {
+          onFinish: () => {
+            localStorage.setItem("skipPerfTour", "true");
+          },
+          onSkip: () => {
+            localStorage.setItem("skipPerfTour", "true");
+          },
+          onStop: () => {
+            localStorage.setItem("skipPerfTour", "true");
+          },
+        }
+      },
+      trackTour: {
+        steps: [{
+          target: "#track-list tr:first-child",
+          content: "You'll have one row per track. You can create as many tracks as you want, even multiple tracks playing the same instrument."
+        }, {
+          target: "#track-list tr:first-child .playpause-track",
+          content: "Play or stop this track."
+        }, {
+          target: "#track-list tr:first-child .choose-track-channel",
+          content: "Select the MIDI channel this track will be driving."
+        }, {
+          target: "#track-list tr:first-child .choose-track-division",
+          content: "Select the division for this track. One bar is 96."
+        }, {
+          target: "#track-list tr:first-child .choose-track-gravity-center",
+          content: "Here you can define the gravity center, gravity will pull notes toward this center while staying in the key or chord as chosen."
+        }, {
+          target: "#track-list tr:first-child .choose-track-gravity-strength",
+          content: "The gravity strength define how hard the notes are pulled toward the center."
+        }, {
+          target: "#track-list tr:first-child .edit-track-notes",
+          content: "Enter notes (or degrees) for this instrument. Notes can be relative to the scale or the chord, this will be defined next. If you choose the notes 1 and 3 in the scale of C major, you'll have C and E. However, in the first triad chord of C major, you'll get C and G (G being the third note in the chord)."
+        }, {
+          target: "#track-list tr:first-child .choose-track-play-mode",
+          content: "Choose in what order the notes are played, like in an arpeggiator."
+        }, {
+          target: "#track-list tr:first-child .choose-track-related-to",
+          content: "Choose if the notes (degrees) relate to the scale, the chord or are 'static' (in this case you'll want to enter raw MIDI notes, like 60 for C4)."
+        }, {
+          target: "#track-list tr:first-child .edit-track-rythm",
+          content: "The rythm of the track (or groove) is expressed as a list of velocities. You can put some zeros in to have silences. The four fields below are, in order: Density, Probability, Amplitude and Center. If you use Density, your rythm will be overwritten by an euclidean rythm of 64 steps, filled with 'density' steps. Probability can randomly skip some notes. Amplitude and Center allow you to humanize your rythm a bit by randomly changing the velocity with an amount of Amplitude around Center."
+        }, {
+          target: "#track-list tr:first-child .choose-track-base-velocity",
+          content: "Base velocity is a multiplier for the rythm velocity and allows to mix the tracks volumes relative to each other."
+        }, {
+          target: "#track-list tr:first-child .choose-track-preset",
+          content: "Some presets are available for you to choose from, they will overwrite your note, division, rythm..."
+        }, {
+          target: "#track-list tr:first-child .remove-track",
+          content: "Remove this track."
+        }, {
+          target: "#track-list tr:first-child .change-track-view",
+          content: "Switch to a different view of your track"
+        }],
+        callbacks: {
+          onFinish: () => {
+            localStorage.setItem("skipTrackTour", "true");
+          },
+          onSkip: () => {
+            localStorage.setItem("skipTrackTour", "true");
+          },
+          onStop: () => {
+            localStorage.setItem("skipTrackTour", "true");
+          },
+          onStart: () => {
+            localStorage.setItem("trackTourStart", "true");
+          }
+        }
+      }
     }
   },
   computed: {
@@ -73,7 +170,7 @@ export default defineComponent({
         if (isMIDIMessageEvent(message)) {
           const m = getMIDIMessage(message);
           if (m.type === "Control Change") {
-            const [ , cc, val] = Array.from(m.data);
+            const [, cc, val] = Array.from(m.data);
             for (let trackIndex = 0; trackIndex < this.tracks.length; trackIndex++) {
               if (trackIndex === m.channel as number - 1) {
                 this.tracks[trackIndex].receiveCC(cc, val);
@@ -87,6 +184,9 @@ export default defineComponent({
   methods: {
     addTrack(track?: TrackModel) {
       this.tracks.push(track ? track : new TrackModel(this.$props.device));
+      if (localStorage.getItem("skipTrackTour") !== "true" && localStorage.getItem("trackTourStarted") !== "true") {
+        this.$tours["trackTour"].start();
+      }
     },
     removeTrack(index: number) {
       this.tracks.splice(index, 1);
@@ -94,7 +194,7 @@ export default defineComponent({
     playpause(all = true) {
       this.playing = !this.playing;
       if (all) {
-        for(const track of this.tracks) {
+        for (const track of this.tracks) {
           if (this.playing) {
             track.play();
           } else {
@@ -106,7 +206,7 @@ export default defineComponent({
     stop(all = true) {
       this.playing = false;
       if (all) {
-        for(const track of this.tracks) {
+        for (const track of this.tracks) {
           track.fullStop();
         }
       }
@@ -114,13 +214,11 @@ export default defineComponent({
     },
     rewind() {
       this.position = 0;
-      if (this.playing) {
-        this.songData.currentChord = this.songData.chordProgression[this.position % this.songData.chordProgression.length];
-      }
+      this.songData.currentChord = this.songData.chordProgression[this.position % this.songData.chordProgression.length];
     },
     panic() {
       this.stop();
-      for(const track of this.tracks) {
+      for (const track of this.tracks) {
         track.fullStop(true);
       }
     },
@@ -164,43 +262,52 @@ export default defineComponent({
       download(filename, json);
       console.log("Data to save", dataToSave);
     }
+  },
+  mounted() {
+    if (localStorage.getItem("skipPerfTour") !== "true") {
+      this.$tours["perfTour"].start();
+    }
   }
 });
 </script>
 
 <template>
-  <div class="row">
-    <div>
+  <v-tour name="perfTour" :steps="tour.steps" :callbacks="tour.callbacks" :options="{ highlight: true }"></v-tour>
+  <v-tour name="trackTour" :steps="trackTour.steps" :callbacks="trackTour.callbacks" :options="{ highlight: true }"></v-tour>
+  <h1>Performance</h1>
+  <div id="performance-zone" class="row">
+    <div id="transport-buttons">
       <button @click="() => { playpause(true); }">{{ playing ? "Pause" : "Play" }}</button>
-      <button @click="() => { stop(true); } ">Stop</button>
+      <button @click="() => { stop(true); }">Stop</button>
       <button @click="rewind">Rew</button>
       <button @click="panic">Panic</button>
     </div>
-    <div>
-      <input type="number" v-model="songData.rootNote" />
-      <br />
-      <span>{{ clock }} {{ position }} {{ relativeZero }}</span>
+    <div id="key-parameters">
+      <div>
+        <input type="number" v-model="songData.rootNote" />
+        <br />
+        <span>{{ clock }} {{ position }} {{ relativeZero }}</span>
+      </div>
+      <div>
+        <select v-model="songData.scale">
+          <option>major</option>
+          <option>minor</option>
+        </select>
+        <br />
+        {{ scales[songData.scale].map((val: number) => noteNumberToName(val, false)).join(" ") }}
+      </div>
     </div>
-    <div>
-      <select v-model="songData.scale">
-        <option>major</option>
-        <option>minor</option>
-      </select>
+    <div id="chords-control">
+      <input id="chord-progression" v-model.lazy="chordProgressionComputed" />
       <br />
-      {{ scales[songData.scale].map((val: number) => noteNumberToName(val, false)).join(" ") }}
-    </div>
-    <div>
-      <input v-model.lazy="chordProgressionComputed" />
-      <br />
-      <input type="number" min="1" max="7" v-model="songData.currentChord" />
-      <br />
+      <input type="number" min="1" max="7" v-model="songData.currentChord" class="hidden" />
       <button v-for="chordDegree of [1, 2, 3, 4, 5, 6, 7]" @click="songData.currentChord = chordDegree"
         :class="songData.currentChord === chordDegree ? 'active' : ''">
         {{ chordDegree }}
       </button>
     </div>
     <div>
-      <select v-model="songData.currentChordType">
+      <select id="chord-type" v-model="songData.currentChordType">
         <option>triad</option>
         <option>power</option>
         <option>sus2</option>
@@ -216,11 +323,12 @@ export default defineComponent({
   </div>
   <h2>Tracks</h2>
   <table>
-    <TrackList :tracks="tracks" :device="device" :song-data="songData" :clock="clock" :clock-start="relativeZero" :removeTrack="removeTrack" />
+    <TrackList :tracks="tracks" :device="device" :song-data="songData" :clock="clock" :clock-start="relativeZero"
+      :removeTrack="removeTrack" />
     <tfoot>
       <tr>
         <th colspan="2">
-          <button @click="() => addTrack()">Add track</button>
+          <button id="add-track" @click="() => addTrack()">Add track</button>
         </th>
         <th colspan="8">
           <div style="display: flex; align-items: center; justify-content: space-around;">

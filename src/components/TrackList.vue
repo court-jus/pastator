@@ -36,7 +36,7 @@ export default defineComponent({});
       <th>&nbsp;</th>
     </tr>
   </thead>
-  <tbody>
+  <tbody id="track-list">
     <Track
       v-for="(track, index) of tracks"
       :device="device"
