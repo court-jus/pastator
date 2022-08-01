@@ -94,14 +94,12 @@ export default defineComponent({
 </script>
 
 <template>
-  <tr v-if="computedView === 'row'">
-    <td class="playpause-track">
-      <button @click="$props.track.playpause">
-        {{ $props.track.position }}
-        {{ $props.track.playing ? "stop" : "play" }}
-      </button>
-    </td>
-    <td class="choose-track-channel"><input class="small" type="number" v-model="$props.track.channel" /></td>
+  <div class="flex-row flex-justify" v-if="computedView === 'row'">
+    <button @click="$props.track.playpause" class="playpause-track" title="Play/Pause track">
+      {{ $props.track.position }}
+      {{ $props.track.playing ? "stop" : "play" }}
+    </button>
+    <input class="choose-track-channel small" type="number" v-model="$props.track.channel" title="MIDI Channel driven by this track"/>
     <td class="choose-track-division"><input class="small" type="number" v-model="$props.track.division" /></td>
     <td class="choose-track-gravity-center"><input class="small" type="number" v-model="$props.track.gravityCenter" /></td>
     <td class="choose-track-gravity-strength"><input class="small" type="number" v-model="$props.track.gravityStrength" /></td>
@@ -147,9 +145,8 @@ export default defineComponent({
       <button class="remove-track" @click="removeTrack">&times;</button>
       <button class="change-track-view" @click="() => { localViewType = 'expand' }">v</button>
     </td>
-  </tr>
-  <tr v-if="computedView === 'expand'">
-    <td colspan="50">
+  </div>
+  <div class="flex-row flex-justify" v-if="computedView === 'expand'">
     <div>
       <button @click="$props.track.playpause">
         {{ $props.track.playing ? "stop" : "play" }}
@@ -162,8 +159,7 @@ export default defineComponent({
       C: <input class="small" type="number" v-model="$props.track.velCenter" />
       <button @click="() => { localViewType = '' }">^</button>
     </div>
-    </td>
-  </tr>
+  </div>
 </template>
 
 

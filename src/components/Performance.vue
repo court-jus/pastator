@@ -80,46 +80,46 @@ export default defineComponent({
       },
       trackTour: {
         steps: [{
-          target: "#track-list tr:first-child",
+          target: "#track-list div.flex-row:first-child",
           content: "You'll have one row per track. You can create as many tracks as you want, even multiple tracks playing the same instrument."
         }, {
-          target: "#track-list tr:first-child .playpause-track",
+          target: "#track-list div.flex-row:first-child .playpause-track",
           content: "Play or stop this track."
         }, {
-          target: "#track-list tr:first-child .choose-track-channel",
+          target: "#track-list div.flex-row:first-child .choose-track-channel",
           content: "Select the MIDI channel this track will be driving."
         }, {
-          target: "#track-list tr:first-child .choose-track-division",
+          target: "#track-list div.flex-row:first-child .choose-track-division",
           content: "Select the division for this track. One bar is 96."
         }, {
-          target: "#track-list tr:first-child .choose-track-gravity-center",
+          target: "#track-list div.flex-row:first-child .choose-track-gravity-center",
           content: "Here you can define the gravity center, gravity will pull notes toward this center while staying in the key or chord as chosen."
         }, {
-          target: "#track-list tr:first-child .choose-track-gravity-strength",
+          target: "#track-list div.flex-row:first-child .choose-track-gravity-strength",
           content: "The gravity strength define how hard the notes are pulled toward the center."
         }, {
-          target: "#track-list tr:first-child .edit-track-notes",
+          target: "#track-list div.flex-row:first-child .edit-track-notes",
           content: "Enter notes (or degrees) for this instrument. Notes can be relative to the scale or the chord, this will be defined next. If you choose the notes 1 and 3 in the scale of C major, you'll have C and E. However, in the first triad chord of C major, you'll get C and G (G being the third note in the chord)."
         }, {
-          target: "#track-list tr:first-child .choose-track-play-mode",
+          target: "#track-list div.flex-row:first-child .choose-track-play-mode",
           content: "Choose in what order the notes are played, like in an arpeggiator."
         }, {
-          target: "#track-list tr:first-child .choose-track-related-to",
+          target: "#track-list div.flex-row:first-child .choose-track-related-to",
           content: "Choose if the notes (degrees) relate to the scale, the chord or are 'static' (in this case you'll want to enter raw MIDI notes, like 60 for C4)."
         }, {
-          target: "#track-list tr:first-child .edit-track-rythm",
+          target: "#track-list div.flex-row:first-child .edit-track-rythm",
           content: "The rythm of the track (or groove) is expressed as a list of velocities. You can put some zeros in to have silences. The four fields below are, in order: Density, Probability, Amplitude and Center. If you use Density, your rythm will be overwritten by an euclidean rythm of 64 steps, filled with 'density' steps. Probability can randomly skip some notes. Amplitude and Center allow you to humanize your rythm a bit by randomly changing the velocity with an amount of Amplitude around Center."
         }, {
-          target: "#track-list tr:first-child .choose-track-base-velocity",
+          target: "#track-list div.flex-row:first-child .choose-track-base-velocity",
           content: "Base velocity is a multiplier for the rythm velocity and allows to mix the tracks volumes relative to each other."
         }, {
-          target: "#track-list tr:first-child .choose-track-preset",
+          target: "#track-list div.flex-row:first-child .choose-track-preset",
           content: "Some presets are available for you to choose from, they will overwrite your note, division, rythm..."
         }, {
-          target: "#track-list tr:first-child .remove-track",
+          target: "#track-list div.flex-row:first-child .remove-track",
           content: "Remove this track."
         }, {
-          target: "#track-list tr:first-child .change-track-view",
+          target: "#track-list div.flex-row:first-child .change-track-view",
           content: "Switch to a different view of your track"
         }],
         callbacks: {
@@ -274,89 +274,77 @@ export default defineComponent({
 <template>
   <v-tour name="perfTour" :steps="tour.steps" :callbacks="tour.callbacks" :options="{ highlight: true }"></v-tour>
   <v-tour name="trackTour" :steps="trackTour.steps" :callbacks="trackTour.callbacks" :options="{ highlight: true }"></v-tour>
-  <h1>Performance</h1>
-  <div id="performance-zone" class="row">
-    <div id="transport-buttons">
-      <button @click="() => { playpause(true); }">{{ playing ? "Pause" : "Play" }}</button>
-      <button @click="() => { stop(true); }">Stop</button>
-      <button @click="rewind">Rew</button>
-      <button @click="panic">Panic</button>
-    </div>
-    <div id="key-parameters">
-      <div>
-        <input type="number" v-model="songData.rootNote" />
+  <div class="flex-column">
+    <h1>Performance</h1>
+    <div id="performance-zone" class="flex-row flex-justify">
+      <div id="transport-buttons">
+        <button @click="() => { playpause(true); }">{{ playing ? "Pause" : "Play" }}</button>
+        <button @click="() => { stop(true); }">Stop</button>
+        <button @click="rewind">Rew</button>
+        <button @click="panic">Panic</button>
+      </div>
+      <div id="key-parameters">
+        <div>
+          <input type="number" v-model="songData.rootNote" />
+          <br />
+          <span>{{ clock }} {{ position }} {{ relativeZero }}</span>
+        </div>
+        <div>
+          <select v-model="songData.scale">
+            <option>major</option>
+            <option>minor</option>
+          </select>
+          <br />
+          {{ scales[songData.scale].map((val: number) => noteNumberToName(val, false)).join(" ") }}
+        </div>
+      </div>
+      <div id="chords-control">
+        <input id="chord-progression" v-model.lazy="chordProgressionComputed" />
         <br />
-        <span>{{ clock }} {{ position }} {{ relativeZero }}</span>
+        <input type="number" min="1" max="7" v-model="songData.currentChord" class="hidden" />
+        <button v-for="chordDegree of [1, 2, 3, 4, 5, 6, 7]" @click="songData.currentChord = chordDegree"
+          :class="songData.currentChord === chordDegree ? 'active' : ''">
+          {{ chordDegree }}
+        </button>
       </div>
       <div>
-        <select v-model="songData.scale">
-          <option>major</option>
-          <option>minor</option>
+        <select id="chord-type" v-model="songData.currentChordType">
+          <option>triad</option>
+          <option>power</option>
+          <option>sus2</option>
+          <option>sus4</option>
+          <option>sixth</option>
+          <option>seventh</option>
+          <option>ninth</option>
+          <option>eleventh</option>
         </select>
         <br />
-        {{ scales[songData.scale].map((val: number) => noteNumberToName(val, false)).join(" ") }}
+        {{ chords[songData.currentChordType].join(" ") }}
       </div>
     </div>
-    <div id="chords-control">
-      <input id="chord-progression" v-model.lazy="chordProgressionComputed" />
-      <br />
-      <input type="number" min="1" max="7" v-model="songData.currentChord" class="hidden" />
-      <button v-for="chordDegree of [1, 2, 3, 4, 5, 6, 7]" @click="songData.currentChord = chordDegree"
-        :class="songData.currentChord === chordDegree ? 'active' : ''">
-        {{ chordDegree }}
-      </button>
-    </div>
-    <div>
-      <select id="chord-type" v-model="songData.currentChordType">
-        <option>triad</option>
-        <option>power</option>
-        <option>sus2</option>
-        <option>sus4</option>
-        <option>sixth</option>
-        <option>seventh</option>
-        <option>ninth</option>
-        <option>eleventh</option>
-      </select>
-      <br />
-      {{ chords[songData.currentChordType].join(" ") }}
+    <div class="flex-column">
+      <TrackList :tracks="tracks" :device="device" :song-data="songData" :clock="clock" :clock-start="relativeZero"
+        :removeTrack="removeTrack" />
+      <div class="flex-row">
+        <button id="add-track" @click="() => addTrack()">Add track</button>
+        <div style="display: flex; align-items: center; justify-content: space-around;">
+          <button @click="newProject">New project</button>
+          <form enctype="multipart/form-data" style="display: flex; align-items: center">
+            <label>
+              Load project
+              <input type="file" accept="application/json" name="song" @change="loadFile" />
+            </label>
+          </form>
+        </div>
+        <button @click="saveFile">Save project</button>
+        <input type="text" v-model="fileName" placeholder="Choose filename" />
+      </div>
     </div>
   </div>
-  <h2>Tracks</h2>
-  <table>
-    <TrackList :tracks="tracks" :device="device" :song-data="songData" :clock="clock" :clock-start="relativeZero"
-      :removeTrack="removeTrack" />
-    <tfoot>
-      <tr>
-        <th colspan="2">
-          <button id="add-track" @click="() => addTrack()">Add track</button>
-        </th>
-        <th colspan="8">
-          <div style="display: flex; align-items: center; justify-content: space-around;">
-            <button @click="newProject">New project</button>
-            <form enctype="multipart/form-data" style="display: flex; align-items: center">
-              <label>
-                Load project
-                <input type="file" accept="application/json" name="song" @change="loadFile" />
-              </label>
-            </form>
-          </div>
-        </th>
-        <th colspan="3">
-          <button @click="saveFile">Save project</button>
-          <input type="text" v-model="fileName" placeholder="Choose filename" />
-        </th>
-      </tr>
-    </tfoot>
-  </table>
 </template>
 
 
 <style scoped>
-.row {
-  display: flex;
-  flex-direction: row;
-  align-items: start;
-}
 
 button {
   border: none;

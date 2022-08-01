@@ -23,30 +23,20 @@ export default defineComponent({});
 
 
 <template>
-  <thead>
-    <tr>
-      <th>&nbsp;</th>
-      <th>Ch.</th>
-      <th>Div.</th>
-      <th colspan="2">Gravity</th>
-      <th colspan="3">Notes</th>
-      <th>Rythm</th>
-      <th>Vel.</th>
-      <th colspan="2">Presets</th>
-      <th>&nbsp;</th>
-    </tr>
-  </thead>
-  <tbody id="track-list">
-    <Track
-      v-for="(track, index) of tracks"
-      :device="device"
-      :track="track"
-      :song-data="songData"
-      :clock="clock"
-      :clock-start="clockStart"
-      :viewType="'row'"
-      :remove-track="() => removeTrack(index)" />
-  </tbody>
+  <div class="flex-column">
+    <h2>Tracks</h2>
+    <div id="track-list">
+      <Track
+        v-for="(track, index) of tracks"
+        :device="device"
+        :track="track"
+        :song-data="songData"
+        :clock="clock"
+        :clock-start="clockStart"
+        :viewType="'row'"
+        :remove-track="() => removeTrack(index)" />
+    </div>
+  </div>
 </template>
 
 
