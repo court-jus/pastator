@@ -11,7 +11,17 @@ defineProps<Props>()
 import { defineComponent } from "vue";
 
 export default defineComponent({
-  emits: ["update:modelValue"]
+  data() {
+    return {
+      outputs: this.$props.midi.outputs
+    };
+  },
+  emits: ["update:modelValue"],
+  mounted() {
+    this.$props.midi.onstatechange = (event) => {
+      this.outputs = (event.target as MIDIAccess).outputs;
+    };
+  }
 });
 </script>
 
@@ -21,8 +31,8 @@ export default defineComponent({
     <select
       class="form-select"
       :value="modelValue?.id"
-      @change="$emit('update:modelValue', midi.outputs.get(($event.target as HTMLSelectElement).value))">
-      <option v-for="outputDevice of midi.outputs.values()" :value="outputDevice.id">{{outputDevice.name}}</option>
+      @change="$emit('update:modelValue', outputs.get(($event.target as HTMLSelectElement).value))">
+      <option v-for="outputDevice of outputs.values()" :value="outputDevice.id">{{outputDevice.name}}</option>
     </select>
   </div>
 </template>
