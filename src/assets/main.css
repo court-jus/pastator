@@ -7,22 +7,3 @@
 .hidden {
   display: none;
 }
-
-.flex-row {
-  display: flex;
-  flex-direction: row;
-  align-items: start;
-}
-
-.flex-column {
-  display: flex;
-  flex-direction: column;
-}
-
-.flex-justify {
-  justify-content: space-between;
-}
-
-.flex-justify > * {
-  margin: 0px 6px;
-}

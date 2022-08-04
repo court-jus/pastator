@@ -151,8 +151,8 @@ export default {
     <div class="col" v-else>
       Trying to get access to MIDI System...
     </div>
-    <div class="col" v-if="midiOutputDevice && midiClockDevice">
-        <Performance :device="midiOutputDevice" :clock="clock" :cc-device="midiCCDevice" />
+    <div class="col-12" v-if="midiOutputDevice && midiClockDevice">
+      <Performance :device="midiOutputDevice" :clock="clock" :cc-device="midiCCDevice" />
     </div>
   </div>
   <v-tour name="mainTour" :steps="tour.steps" :callbacks="tour.callbacks" :options="{ highlight: true }"></v-tour>

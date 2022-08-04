@@ -4,6 +4,7 @@ import type { Preset, SongData } from "@/model/types";
 import { noteNumberToName } from "@/model/engine";
 import type { TrackModel } from "@/model/TrackModel";
 import PresetSelect from "./PresetSelect.vue";
+import ConfirmButton from "./ConfirmButton.vue";
 
 interface Props {
   track: TrackModel
@@ -113,9 +114,9 @@ export default defineComponent({
             <button @click="$props.track.playpause" class="btn btn-outline-primary playpause-track" title="Play/Pause track">
               <i :class="'bi bi-' + ($props.track.playing ? 'pause' : 'play') + '-fill'"></i>
             </button>
-            <button class="btn btn-outline-primary remove-track" @click="removeTrack">
+            <ConfirmButton label="Remove track" @confirmed="removeTrack">
               <i class="bi bi-trash-fill"></i>
-            </button>
+            </ConfirmButton>
             <button class="btn btn-outline-primary change-track-view" @click="cycleView">
               <i class="bi bi-eye-fill"></i>
             </button>
