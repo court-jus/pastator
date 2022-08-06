@@ -30,13 +30,7 @@ export const getNotes = (song: SongData, notes: number[], octaves: number[], rel
   return result;
 };
 
-export const playNote = (port: MIDIOutput, channel: number, note: number, velocity: number, delay = 0) => {
-  if (delay) {
-    window.setTimeout(() => {
-      playNote(port, channel, note, velocity);
-    }, delay);
-    return;
-  }
+export const playNote = (port: MIDIOutput, channel: number, note: number, velocity: number) => {
   if (note > -1 && note < 128) port.send([0x80 | (1 << 4) | channel, note, velocity]);
 };
 

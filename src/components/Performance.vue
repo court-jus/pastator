@@ -157,6 +157,9 @@ export default defineComponent({
   },
   watch: {
     clock(newClock, oldClock) {
+      if (newClock < oldClock)  {
+        this.panic();
+      }
       if (newClock % this.barLength === 0) {
         this.position += 1;
         if (this.playing) {

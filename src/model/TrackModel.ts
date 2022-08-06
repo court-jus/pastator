@@ -161,14 +161,16 @@ export class TrackModel {
     if (velocity > 0 && this.channel !== undefined) {
       let strumDelay = 0;
       for (const note of playedNotes) {
-        this.currentNotes.push(note + this.transpose);
-        playNote(
-          this.device,
-          this.channel,
-          note + this.transpose,
-          velocity,
-          strumDelay
-        );
+        window.setTimeout(() => {
+          if (!this.playing) return;
+          this.currentNotes.push(note + this.transpose);
+          playNote(
+            this.device,
+            this.channel,
+            note + this.transpose,
+            velocity
+          );
+        }, strumDelay);
         strumDelay += this.playMode === "strum" ? 150 : 0;
       }
     }

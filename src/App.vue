@@ -85,7 +85,6 @@ export default {
           const m = getMIDIMessage(message);
           if (m.type === "System" && m.channel === "Stop") {
             this.clock = 0;
-            // song.fullStop();
           } else if (m.type === "System" && m.channel === "Clock") {
             this.clock += 1;
           }
