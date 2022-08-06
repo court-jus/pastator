@@ -226,25 +226,34 @@ export class TrackModel {
       this.relatedTo
     );
     if (
-      this.gravityCenter === undefined ||
-      this.gravityStrength === undefined
+      !this.gravityCenter ||
+      !this.gravityStrength
     ) {
       return candidateNotes;
     }
-    const margin = Math.trunc((140 - this.gravityStrength) / 2);
-    const lowerBound = Math.max(this.gravityCenter - margin, 0);
-    const higherBound = Math.min(this.gravityCenter + margin, 127);
-    return candidateNotes.map((note: number) => {
-      if (note < lowerBound) {
-        const transp = lowerBound - note;
+    const [lowLimit, highLimit] = this.getNotesLimits();
+    const [lowCandidate, highCandidate] = [Math.min(...candidateNotes), Math.max(...candidateNotes)];
+    const candidatesCenter = Math.trunc((highCandidate - lowCandidate) / 2) + lowCandidate;
+    const shift = this.gravityCenter - candidatesCenter;
+    return candidateNotes.map((note: number) => note + shift).map((note: number) => {
+      if (note < lowLimit) {
+        const transp = lowLimit - note;
         return note + transp + (12 - (transp % 12));
       }
-      if (note > higherBound) {
-        const transp = note - higherBound;
+      if (note > highLimit) {
+        const transp = note - highLimit;
         return note - transp - (12 - (transp % 12));
       }
       return note;
-    });
+    }).sort();
+  }
+  getNotesLimits() {
+    if (!this.gravityCenter || !this.gravityStrength) return [];
+    const margin = Math.trunc((40 - this.gravityStrength) / 2);
+    const lowLimit = Math.max(this.gravityCenter - margin, 0);
+    const highLimit = Math.min(this.gravityCenter + margin, 127);
+    console.log(margin, lowLimit, highLimit);
+    return [lowLimit, highLimit];
   }
   rythm() {
     if (this.rythmDensity) {

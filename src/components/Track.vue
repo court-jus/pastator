@@ -60,6 +60,15 @@ export default defineComponent({
     },
     computedView: function() {
       return this.localViewType ? this.localViewType : this.$props.viewType;
+    },
+    notesIndicator: function() {
+      const availableNotesNames = [...new Set(this.availableNotes)].map((val: number) => noteNumberToName(val));
+      const [lowLimit, highLimit] = this.$props.track.getNotesLimits().map((val: number) => noteNumberToName(val));
+      const notes = [];
+      if (lowLimit) notes.push(lowLimit, "|");
+      notes.push(...availableNotesNames);
+      if (highLimit) notes.push("|", highLimit);
+      return notes.join(" ");
     }
   },
   watch: {
@@ -105,9 +114,9 @@ export default defineComponent({
         <div class="col-4">
           <div class="input-group" role="group">
             <span class="input-group-text">Channel</span>
-            <input class="form-control form-control-sm choose-track-channel" type="number" v-model="$props.track.channel" title="MIDI Channel driven by this track"/>
+            <input class="form-control form-control-sm choose-track-channel" type="number" min="0" max="15" v-model="$props.track.channel" title="MIDI Channel driven by this track"/>
             <span class="input-group-text">Vol.</span>
-            <input class="form-control choose-track-base-velocity" type="number" v-model="$props.track.baseVelocity" />
+            <input class="form-control choose-track-base-velocity" type="number" min="0" max="100" v-model="$props.track.baseVelocity" />
           </div>
         </div>
         <div class="col-6">
@@ -124,7 +133,7 @@ export default defineComponent({
           <div class="edit-track-notes input-group">
             <span class="input-group-text">Degrees</span>
             <NumberListInput v-model="$props.track.availableDegrees" />
-            <span class="input-group-text">{{ [...new Set(availableNotes)].map((val: number) => noteNumberToName(val)).join(" ") }}</span>
+            <span class="input-group-text">{{ notesIndicator }}</span>
           </div>
         </div>
         <div class="col-6">
@@ -146,8 +155,8 @@ export default defineComponent({
               <option value="static">Static</option>
             </select>
             <span class="input-group-text">Gravity</span>
-            <input class="form-control choose-track-gravity-center" type="number" v-model="$props.track.gravityCenter" />
-            <input class="form-control choose-track-gravity-strength" type="number" v-model="$props.track.gravityStrength" />
+            <input class="form-control choose-track-gravity-center" type="number" min="0" max="127" v-model="$props.track.gravityCenter" />
+            <input class="form-control choose-track-gravity-strength" type="number" min="0" max="27" v-model="$props.track.gravityStrength" />
           </div>
         </div>
       </div>
@@ -163,20 +172,20 @@ export default defineComponent({
         <div class="col-4">
           <div class="input-group" role="group">
             <span class="input-group-text">Div.</span>
-            <input class="form-control choose-track-division" type="number" v-model="$props.track.division" />
+            <input class="form-control choose-track-division" type="number" min="0" v-model="$props.track.division" />
           </div>
         </div>
       </div>
       <div class="col-12" v-if="computedView === 'expand'">
         <div class="input-group input-group">
           <span class="input-group-text">Density</span>
-          <input class="form-control" type="number" v-model="$props.track.rythmDensity" />
+          <input class="form-control" type="number" min="0" max="64" v-model="$props.track.rythmDensity" />
           <span class="input-group-text">Proba.</span>
-          <input class="form-control" type="number" v-model="$props.track.proba" />
+          <input class="form-control" type="number" min="0" max="100" v-model="$props.track.proba" />
           <span class="input-group-text">V.Ampl.</span>
-          <input class="form-control" type="number" v-model="$props.track.velAmplitude" />
+          <input class="form-control" type="number" min="0" max="100" v-model="$props.track.velAmplitude" />
           <span class="input-group-text">V.Center</span>
-          <input class="form-control" type="number" v-model="$props.track.velCenter" />
+          <input class="form-control" type="number" min="0" max="100" v-model="$props.track.velCenter" />
         </div>
       </div>
       <div class="col-12" v-if="computedView === 'expand'">
@@ -184,13 +193,13 @@ export default defineComponent({
           <div class="col-2">
             <div class="input-group" role="group">
               <span class="input-group-text">Strum</span>
-              <input class="form-control" type="number" v-model="$props.track.strumDelay" />
+              <input class="form-control" type="number" min="0" v-model="$props.track.strumDelay" />
             </div>
           </div>
           <div class="col-2">
             <div class="input-group" role="group">
               <span class="input-group-text">Gate</span>
-              <input class="form-control" type="number" v-model="$props.track.gate" />
+              <input class="form-control" type="number" min="0" max="100" v-model="$props.track.gate" />
             </div>
           </div>
           <div class="col-2">
@@ -207,22 +216,22 @@ export default defineComponent({
         <div class="col-3">
           <div class="input-group" role="group">
             <span class="input-group-text">Gravity</span>
-            <input class="form-control" type="number" v-model="$props.track.gravityCenter" />
-            <input class="form-control" type="number" v-model="$props.track.gravityStrength" />
+            <input class="form-control choose-track-gravity-center" type="number" min="0" max="127" v-model="$props.track.gravityCenter" />
+            <input class="form-control choose-track-gravity-strength" type="number" min="0" max="27" v-model="$props.track.gravityStrength" />
           </div>
         </div>
         <div class="col-9">
           <div class="input-group input-group">
             <span class="input-group-text">Div.</span>
-            <input class="form-control" type="number" v-model="$props.track.division" />
+            <input class="form-control choose-track-division" type="number" min="0" v-model="$props.track.division" />
             <span class="input-group-text">Density</span>
-            <input class="form-control" type="number" v-model="$props.track.rythmDensity" />
+          <input class="form-control" type="number" min="0" max="64" v-model="$props.track.rythmDensity" />
             <span class="input-group-text">Proba.</span>
-            <input class="form-control" type="number" v-model="$props.track.proba" />
+          <input class="form-control" type="number" min="0" max="100" v-model="$props.track.proba" />
             <span class="input-group-text">V.Ampl.</span>
-            <input class="form-control" type="number" v-model="$props.track.velAmplitude" />
+          <input class="form-control" type="number" min="0" max="100" v-model="$props.track.velAmplitude" />
             <span class="input-group-text">V.Center</span>
-            <input class="form-control" type="number" v-model="$props.track.velCenter" />
+          <input class="form-control" type="number" min="0" max="100" v-model="$props.track.velCenter" />
           </div>
         </div>
       </div>
