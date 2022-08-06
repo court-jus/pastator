@@ -61,7 +61,7 @@ export class TrackModel {
     this.relatedTo = "chord";
     this.transpose = 0;
     this.baseVelocity = 100;
-    this.strumDelay = 0;
+    this.strumDelay = 150;
     this.rythmDefinition = [100];
     this.availableDegrees = [0, 1, 2];
     this.octaves = [0];
@@ -159,7 +159,7 @@ export class TrackModel {
         : [availableNotes[0]];
     const velocity = this.rythm();
     if (velocity > 0 && this.channel !== undefined) {
-      let strumDelay = 0;
+      let delay = 0;
       for (const note of playedNotes) {
         window.setTimeout(() => {
           if (!this.playing) return;
@@ -170,8 +170,8 @@ export class TrackModel {
             note + this.transpose,
             velocity
           );
-        }, strumDelay);
-        strumDelay += this.playMode === "strum" ? 150 : 0;
+        }, delay);
+        delay += this.playMode === "strum" ? this.strumDelay : 0;
       }
     }
   }
