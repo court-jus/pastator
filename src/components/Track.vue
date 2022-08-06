@@ -183,9 +183,9 @@ export default defineComponent({
           <span class="input-group-text">Proba.</span>
           <input class="form-control" type="number" min="0" max="100" v-model="$props.track.proba" />
           <span class="input-group-text">V.Ampl.</span>
-          <input class="form-control" type="number" min="0" max="100" v-model="$props.track.velAmplitude" />
+          <input class="form-control" type="number" min="0" :max="100 - ($props.track.velCenter || 0)" v-model="$props.track.velAmplitude" />
           <span class="input-group-text">V.Center</span>
-          <input class="form-control" type="number" min="0" max="100" v-model="$props.track.velCenter" />
+          <input class="form-control" type="number" :min="$props.track.velAmplitude || 0" :max="100 - ($props.track.velAmplitude || 0)" v-model="$props.track.velCenter" />
         </div>
       </div>
       <div class="col-12" v-if="computedView === 'expand'">
@@ -231,7 +231,7 @@ export default defineComponent({
             <span class="input-group-text">V.Ampl.</span>
           <input class="form-control" type="number" min="0" max="100" v-model="$props.track.velAmplitude" />
             <span class="input-group-text">V.Center</span>
-          <input class="form-control" type="number" min="0" max="100" v-model="$props.track.velCenter" />
+          <input class="form-control" type="number" :min="$props.track.velAmplitude || 0" :max="100 - ($props.track.velAmplitude || 0)" v-model="$props.track.velCenter" />
           </div>
         </div>
       </div>

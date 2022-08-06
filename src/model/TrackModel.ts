@@ -252,7 +252,6 @@ export class TrackModel {
     const margin = Math.trunc((40 - this.gravityStrength) / 2);
     const lowLimit = Math.max(this.gravityCenter - margin, 0);
     const highLimit = Math.min(this.gravityCenter + margin, 127);
-    console.log(margin, lowLimit, highLimit);
     return [lowLimit, highLimit];
   }
   rythm() {
@@ -264,16 +263,16 @@ export class TrackModel {
         const xprev = (x - 1) % 64;
         const prev_value = Math.floor((xprev * this.rythmDensity) / 64);
         const new_value = Math.floor((x * this.rythmDensity) / 64);
-        let velocity = 100;
-        if (this.velAmplitude !== undefined) {
-          const center = this.velCenter !== undefined ? this.velCenter : 50;
-          velocity = Math.floor(
-            Math.random() * this.velAmplitude - this.velAmplitude / 2 + center
-          );
-        }
-        this.rythmDefinition.push(prev_value !== new_value ? velocity : 0);
+        this.rythmDefinition.push(prev_value !== new_value ? 100 : 0);
       }
     }
+    this.rythmDefinition = this.rythmDefinition.map((value: number) => {
+      if (this.velAmplitude === undefined || value === 0) return value;
+      const center = this.velCenter !== undefined ? this.velCenter : 50;
+      return Math.floor(
+        Math.random() * this.velAmplitude - this.velAmplitude / 2 + center
+      );
+    });
     const chosenVelocity =
       this.rythmDefinition[this.position % this.rythmDefinition.length];
     const restThreshold = 100;
