@@ -162,6 +162,7 @@ export default defineComponent({
               <option value="nil">----</option>
               <option value="scale">Scale</option>
               <option value="chord">Chord</option>
+              <option value="invchord">Chord (Inv.)</option>
               <option value="static">Static</option>
             </select>
             <span class="input-group-text">Gravity</span>

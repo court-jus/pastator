@@ -4,30 +4,43 @@ import type { SongData } from "@/model/types";
 export const getNotes = (song: SongData, notes: number[], octaves: number[], relatedTo: string) => {
   if (relatedTo === "static") {
     // Keep the notes as they are
-    return notes.sort();
+    return notes;
   }
   const scaleScheme = scales[song.scale];
   const candidateNotes =
-    relatedTo === "chord"
+    (relatedTo === "chord" || relatedTo === "invchord")
       ? chords[song.currentChordType].map((noteDegree: number) => {
         const targetNote = noteDegree - 1 + (song.currentChord - 1);
-        return scaleScheme[targetNote % scaleScheme.length];
+        return scaleScheme[targetNote % scaleScheme.length] + (
+          relatedTo === "chord" ?
+          12 * Math.trunc(targetNote / scaleScheme.length)
+          : 0
+        );
       })
       : scaleScheme;
   const result = [];
   for (const octave of octaves) {
     result.push(
       ...notes.map((requiredNote) => {
+        // We consider that a chord will never contain more than 10 notes
+        // so if the requiredNote is 10 or more, that's an octave above
+        const rotated = requiredNote % 10;
+        const octaveShift = Math.trunc(requiredNote / 10);
+        if (candidateNotes.length <= rotated) return 0;
         return (
           song.rootNote +
-          12 * octave +
-          candidateNotes[requiredNote % candidateNotes.length] +
-          12 * Math.trunc(requiredNote / candidateNotes.length)
+          12 * (octave + octaveShift) +
+          candidateNotes[rotated % candidateNotes.length] +
+          12 * Math.trunc(rotated / candidateNotes.length)
         );
-      })
+      }).filter(value => value > 0)
     );
   }
-  return result;
+  return (
+    relatedTo === "invchord" ?
+    result.sort():
+    result
+  );
 };
 
 export const playNote = (port: MIDIOutput, channel: number, note: number, velocity: number) => {

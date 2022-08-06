@@ -19,8 +19,8 @@ export interface Preset {
   rythm: number[],
   octaves: number[],
   division: number,
-  playMode: string,
-  relatedTo: string,
+  playMode: "up" | "dn" | "updn" | "random" | "atonce" | "strum",
+  relatedTo: "chord" | "scale" | "invchord" | "static",
 }
 
 export type PresetCategories = Record<string, Preset[]>;

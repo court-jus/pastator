@@ -16,8 +16,8 @@ export type SavedTrackModel = {
   velCenter?: number;
   proba?: number;
   maxNotes?: number;
-  playMode: string;
-  relatedTo: string;
+  playMode: "up" | "dn" | "updn" | "random" | "atonce" | "strum",
+  relatedTo: "chord" | "scale" | "invchord" | "static",
   channel: number;
   presetId: string;
   presetCategory: string;
@@ -46,8 +46,8 @@ export class TrackModel {
   availableDegrees: number[];
   octaves: number[];
   maxNotes?: number;
-  playMode: string;
-  relatedTo: string;
+  playMode: "up" | "dn" | "updn" | "random" | "atonce" | "strum";
+  relatedTo: "chord" | "scale" | "invchord" | "static";
   preset?: Preset;
   presetId?: string;
   presetCategory?: string;
