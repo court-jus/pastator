@@ -216,7 +216,7 @@ export default defineComponent({
         this.tracksPlaying = !this.tracksPlaying;
         for (const track of this.tracks) {
           if (this.tracksPlaying) {
-            track.play();
+            track.play(this.songData);
           } else {
             track.fullStop();
           }
@@ -307,17 +307,17 @@ export default defineComponent({
       <div class="row">
         <div class="col-2">
           <div class="btn-group" role="group" id="transport-buttons">
+            <button class="btn btn-small btn-outline-primary" @click="() => { playpause(true, true); }">
+              <i :class="'bi bi-' + ((playing && tracksPlaying) ? 'pause' : 'play') + '-circle'"></i>
+            </button>
             <button class="btn btn-small btn-outline-primary" @click="() => { playpause(true, false); }">
               <i :class="'bi bi-' + (playing ? 'pause' : 'play') + '-fill'"></i>
             </button>
-            <button class="btn btn-small btn-outline-primary" @click="() => { stop(true); }">
+            <button class="btn btn-small btn-outline-primary" @click="panic">
               <i class="bi bi-stop-fill"></i>
             </button>
             <button class="btn btn-small btn-outline-primary" @click="rewind">
               <i class="bi bi-rewind-fill"></i>
-            </button>
-            <button class="btn btn-small btn-outline-primary" @click="panic">
-              <i class="bi bi-volume-mute-fill"></i>
             </button>
           </div>
         </div>

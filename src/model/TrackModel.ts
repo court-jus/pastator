@@ -118,18 +118,22 @@ export class TrackModel {
   }
 
   // Transport
-  play() {
+  play(songData: SongData) {
     this.playing = true;
+    if (this.division === 0) {
+      // Run drones on play, without waiting for a clock
+      this.emit(songData);
+    }
   }
   fullStop(panic = false) {
     if (panic) this.stop();
     this.playing = false;
   }
-  playpause() {
+  playpause(songData: SongData) {
     if (this.playing) {
       this.fullStop(true);
     } else {
-      this.playing = true;
+      this.play(songData);
     }
   }
 
@@ -194,6 +198,22 @@ export class TrackModel {
       this.baseVelocity = val;
     } else {
       console.log("I got CC", cc, val);
+    }
+  }
+  // Clock
+  tick(newClock: number, songData: SongData) {
+    if (this.division === 0) return;
+    this.position = Math.trunc(newClock / this.division);
+    if (!this.playing) return;
+    if (newClock % this.division === 0) {
+      if (this.gate === 100) this.stop();
+      this.emit(songData);
+    } else if (this.gate < 100) {
+      const pcLow = ((newClock % this.division) / this.division) * 100;
+      const pcHigh = (((newClock + 1) % this.division) / this.division) * 100;
+      if (pcHigh < pcLow || pcLow < this.gate && pcHigh >= this.gate) {
+        this.stop();
+      }
     }
   }
 
@@ -264,5 +284,12 @@ export class TrackModel {
     this.division = newPreset.division;
     this.playMode = newPreset.playMode;
     this.relatedTo = newPreset.relatedTo;
+  }
+  currentChordChange(songData: SongData) {
+    if (!this.playing) return;
+    if (this.division === 0) {
+      this.stop();
+      this.emit(songData);
+    }
   }
 }

@@ -67,36 +67,16 @@ export default defineComponent({
       this.$props.track.device = newDevice;
     },
     clock(newClock: number) {
-      if (this.$props.track.division === 0) return;
-      this.$props.track.position = Math.trunc(newClock / this.$props.track.division);
-      if (!this.$props.track.playing) return;
-      if (newClock % this.$props.track.division === 0) {
-        if (this.$props.track.gate === 100) this.$props.track.stop();
-        this.$props.track.emit(this.$props.songData);
-      } else if (this.$props.track.gate < 100) {
-        const pcLow = ((newClock % this.$props.track.division) / this.$props.track.division) * 100;
-        const pcHigh = (((newClock + 1) % this.$props.track.division) / this.$props.track.division) * 100;
-        if (pcHigh < pcLow || pcLow < this.$props.track.gate && pcHigh >= this.$props.track.gate) {
-          this.$props.track.stop();
-        }
-      }
+      this.$props.track.tick(newClock, this.$props.songData);
     },
-    'track.channel'(newChannel: number, oldChannel: number) {
+    'track.channel'() {
       this.$props.track.stop();
     },
-    'songData.currentChord'(newChord: number) {
-      if (!this.$props.track.playing) return;
-      if (this.$props.track.division === 0) {
-        this.$props.track.stop();
-        this.$props.track.emit(this.$props.songData);
-      }
+    'songData.currentChord'() {
+      this.$props.track.currentChordChange(this.$props.songData);
     },
-    'songData.currentChordType'(newChord: number) {
-      if (!this.$props.track.playing) return;
-      if (this.$props.track.division === 0) {
-        this.$props.track.stop();
-        this.$props.track.emit(this.$props.songData);
-      }
+    'songData.currentChordType'() {
+      this.$props.track.currentChordChange(this.$props.songData);
     }
   },
   beforeUnmount() {
@@ -111,7 +91,7 @@ export default defineComponent({
       <div class="row">
         <div class="col-2">
           <div class="btn-group" role="group">
-            <button @click="$props.track.playpause" class="btn btn-outline-primary playpause-track" title="Play/Pause track">
+            <button @click="() => $props.track.playpause($props.songData)" class="btn btn-outline-primary playpause-track" title="Play/Pause track">
               <i :class="'bi bi-' + ($props.track.playing ? 'pause' : 'play') + '-fill'"></i>
             </button>
             <ConfirmButton label="Remove track" @confirmed="removeTrack">
@@ -252,8 +232,4 @@ export default defineComponent({
 
 
 <style scoped>
-
-tr {
-  vertical-align: top;
-}
 </style>
