@@ -24,6 +24,7 @@ interface Data {
   fileName: string
   position: number
   playing: boolean
+  tracksPlaying: boolean
   barLength: number
   tour: Tour
   trackTour: Tour
@@ -45,6 +46,7 @@ export default defineComponent({
       },
       position: 0,
       playing: false,
+      tracksPlaying: false,
       barLength: 96,
       tour: {
         steps: [{
@@ -206,11 +208,14 @@ export default defineComponent({
     removeTrack(index: number) {
       this.tracks.splice(index, 1);
     },
-    playpause(all = true) {
-      this.playing = !this.playing;
-      if (all) {
+    playpause(seq = true, tracks = true) {
+      if (seq) {
+        this.playing = !this.playing;
+      }
+      if (tracks) {
+        this.tracksPlaying = !this.tracksPlaying;
         for (const track of this.tracks) {
-          if (this.playing) {
+          if (this.tracksPlaying) {
             track.play();
           } else {
             track.fullStop();
@@ -218,9 +223,12 @@ export default defineComponent({
         }
       }
     },
-    stop(all = true) {
-      this.playing = false;
-      if (all) {
+    stop(seq = true, tracks = true) {
+      if (seq) {
+        this.playing = false;
+      }
+      if (tracks) {
+        this.tracksPlaying = false;
         for (const track of this.tracks) {
           track.fullStop();
         }
@@ -299,7 +307,7 @@ export default defineComponent({
       <div class="row">
         <div class="col-2">
           <div class="btn-group" role="group" id="transport-buttons">
-            <button class="btn btn-small btn-outline-primary" @click="() => { playpause(true); }">
+            <button class="btn btn-small btn-outline-primary" @click="() => { playpause(true, false); }">
               <i :class="'bi bi-' + (playing ? 'pause' : 'play') + '-fill'"></i>
             </button>
             <button class="btn btn-small btn-outline-primary" @click="() => { stop(true); }">
@@ -359,14 +367,17 @@ export default defineComponent({
       <div class="row">
         <div class="col-2">
           <div class="btn-group" role="group">
-            <button class="btn btn-outline-primary" id="add-track" @click="() => addTrack()">
-              <i class="bi bi-plus-circle"></i>
+            <button class="btn btn-outline-primary" id="add-track" @click="() => { playpause(false, true); }">
+              <i :class="'bi bi-' + (tracksPlaying ? 'pause' : 'play') + '-fill'"></i>
             </button>
             <ConfirmButton label="Remove all tracks" @confirmed="newProject">
               <i class="bi bi-radioactive"></i>
             </ConfirmButton>
             <button class="btn btn-outline-primary change-track-view" @click="cycleView">
               <i class="bi bi-eye-fill"></i>
+            </button>
+            <button class="btn btn-outline-primary" id="add-track" @click="() => addTrack()">
+              <i class="bi bi-plus-circle"></i>
             </button>
           </div>
         </div>
