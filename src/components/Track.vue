@@ -213,6 +213,12 @@ export default defineComponent({
               <input class="form-control" type="number" v-model="$props.track.gate" />
             </div>
           </div>
+          <div class="col-2">
+            <div class="edit-track-notes input-group">
+              <span class="input-group-text">Octaves</span>
+              <NumberListInput v-model="$props.track.octaves" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
