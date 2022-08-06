@@ -19,6 +19,18 @@ interface AppData {
   showMidiDevices: boolean
 }
 
+function loadMidiDeviceFromLocalStorage(label: string): string | null {
+  return localStorage.getItem(label);
+}
+
+function loadMidiInputDeviceFromLocalStorage(midi: MIDIAccess, label: string): MIDIInput | undefined {
+  return midi.inputs.get(loadMidiDeviceFromLocalStorage(label) || "");
+}
+
+function loadMidiOutputDeviceFromLocalStorage(midi: MIDIAccess, label: string): MIDIOutput | undefined {
+  return midi.outputs.get(loadMidiDeviceFromLocalStorage(label) || "");
+}
+
 export default {
   data(): AppData {
     return {
@@ -26,7 +38,7 @@ export default {
       midiOutputDevice: undefined,
       midiCCDevice: undefined,
       midiNotesDevice: undefined,
-      showMidiDevices: true,
+      showMidiDevices: localStorage.getItem("midiclock") === null || localStorage.getItem("midioutput") === null,
       midiSystem: undefined,
       clock: 0,
       tour: {
@@ -62,6 +74,10 @@ export default {
       .then(
         (access) => {
           this.midiSystem = access;
+          this.midiClockDevice = loadMidiInputDeviceFromLocalStorage(access, "midiclock");
+          this.midiOutputDevice = loadMidiOutputDeviceFromLocalStorage(access, "midioutput");
+          this.midiCCDevice = loadMidiInputDeviceFromLocalStorage(access, "midicc");
+          this.midiNotesDevice = loadMidiInputDeviceFromLocalStorage(access, "midinotes");
           this.midiSystem.onstatechange = (event) => {
             console.log("MIDI onstatechange", event);
           };
@@ -102,6 +118,18 @@ export default {
       localStorage.removeItem("skipPerfTour");
       localStorage.removeItem("skipTrackTour");
       this.$tours["mainTour"].start();
+    },
+    midiDeviceSelected(newDevice: MIDIInput | MIDIOutput, label: string) {
+      if (label === "midiclock") {
+        this.midiClockDevice = newDevice as MIDIInput;
+      } else if (label === "midioutput") {
+        this.midiOutputDevice = newDevice as MIDIOutput;
+      } else if (label === "midicc") {
+        this.midiCCDevice = newDevice as MIDIInput;
+      } else if (label === "midinotes") {
+        this.midiNotesDevice = newDevice as MIDIInput;
+      }
+      localStorage.setItem(label, newDevice.id);
     }
   }
 }
@@ -135,19 +163,19 @@ export default {
     <div class="col-6 offset-6" v-if="midiSystem && showMidiDevices">
       <div>
         <div class="row" id="midi-clock-selection">
-          <SelectMidiInput :label="'Clock'" :modelValue="midiClockDevice" @update:modelValue="newValue => midiClockDevice = newValue"
+          <SelectMidiInput :label="'Clock'" :modelValue="midiClockDevice" @update:modelValue="newValue => midiDeviceSelected(newValue, 'midiclock')"
             :midi="midiSystem" />
         </div>
         <div class="row" id="midi-out-selection">
-          <SelectMidiOutput :label="'Output'" :modelValue="midiOutputDevice" @update:modelValue="newValue => midiOutputDevice = newValue"
+          <SelectMidiOutput :label="'Output'" :modelValue="midiOutputDevice" @update:modelValue="newValue => midiDeviceSelected(newValue, 'midioutput')"
             :midi="midiSystem" />
         </div>
         <div class="row" id="midi-cc-in" v-if="midiOutputDevice && midiClockDevice">
-          <SelectMidiInput :label="'Midi CC'" :modelValue="midiCCDevice" @update:modelValue="newValue => midiCCDevice = newValue"
+          <SelectMidiInput :label="'Midi CC'" :modelValue="midiCCDevice" @update:modelValue="newValue => midiDeviceSelected(newValue, 'midicc')"
             :midi="midiSystem" />
         </div>
         <div class="row" id="midi-notes-in" v-if="midiOutputDevice && midiClockDevice">
-          <SelectMidiInput :label="'Midi Notes'" :modelValue="midiNotesDevice" @update:modelValue="newValue => midiNotesDevice = newValue"
+          <SelectMidiInput :label="'Midi Notes'" :modelValue="midiNotesDevice" @update:modelValue="newValue => midiDeviceSelected(newValue, 'midinotes')"
             :midi="midiSystem" />
         </div>
       </div>
