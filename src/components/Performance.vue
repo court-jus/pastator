@@ -13,7 +13,7 @@ import { TrackModel } from "@/model/TrackModel";
 import TrackList from "./TrackList.vue";
 import type { SongData, SavedSongModel } from "@/model/types";
 import { noteNumberToName, isMIDIMessageEvent, getMIDIMessage } from "@/model/engine";
-import { scales, chords } from "@/model/presets";
+import { scales, chords, BarLength } from "@/model/presets";
 import { download } from "@/utils";
 import type { Tour } from "@/types";
 import ConfirmButton from "./ConfirmButton.vue";
@@ -47,7 +47,7 @@ export default defineComponent({
       position: 0,
       playing: false,
       tracksPlaying: false,
-      barLength: 96,
+      barLength: BarLength,
       tour: {
         steps: [{
           target: "#performance-zone",
@@ -255,7 +255,6 @@ export default defineComponent({
         if (typeof reader.result === "string") {
           this.fileName = f.name;
           const loadedSongData = JSON.parse(reader.result) as SavedSongModel;
-          console.log("loadFile", loadedSongData);
           this.songData.rootNote = loadedSongData.rootNote;
           this.songData.scale = loadedSongData.scale;
           this.songData.currentChord = loadedSongData.currentChord;

@@ -2,9 +2,11 @@
 import NumberListInput from "./NumberListInput.vue";
 import type { Preset, SongData } from "@/model/types";
 import { noteNumberToName } from "@/model/engine";
-import type { TrackModel } from "@/model/TrackModel";
+import type { TrackModel, RythmMode } from "@/model/TrackModel";
 import PresetSelect from "./PresetSelect.vue";
 import ConfirmButton from "./ConfirmButton.vue";
+import StepsSequencer from "./StepsSequencer.vue";
+import RythmPresetSelector from "./RythmPresetSelector.vue";
 
 interface Props {
   track: TrackModel
@@ -131,7 +133,12 @@ export default defineComponent({
       <div class="row">
         <div class="col-6">
           <div class="edit-track-notes input-group">
-            <span class="input-group-text">Degrees</span>
+            <select class="input-group-text form-select" v-model="$props.track.notesMode">
+              <option value="manual">Manual</option>
+              <option value="preset">Preset</option>
+              <option value="ponderated">Ponderated</option>
+              <option value="random">Random</option>
+            </select>
             <NumberListInput v-model="$props.track.availableDegrees" />
             <span class="input-group-text">{{ notesIndicator }}</span>
           </div>
@@ -163,23 +170,28 @@ export default defineComponent({
     </div>
     <div class="col-12" v-if="computedView === 'expand'">
       <div class="row">
-        <div class="col-8">
+        <div class="col-12">
           <div class="edit-track-rythm input-group">
-            <span class="input-group-text">Rythm</span>
-            <NumberListInput v-model="$props.track.rythmDefinition" /><br />
-          </div>
-        </div>
-        <div class="col-4">
-          <div class="input-group" role="group">
+            <select class="input-group-text form-select" v-model="$props.track.rythmMode" @change="(ev: Event) => $props.track.applyRythmMode((ev.target as HTMLSelectElement).value as RythmMode)">
+              <option value="manual">Manual</option>
+              <option value="preset">Preset</option>
+              <option value="16steps">16 steps</option>
+              <option value="euclidean">Euclidean</option>
+            </select>
+            <NumberListInput class="w-50" v-if="$props.track.rythmMode === 'manual'" v-model="$props.track.rythmDefinition" />
+            <RythmPresetSelector v-if="$props.track.rythmMode === 'preset'" @preset-change="(val) => { $props.track.applyRythmPreset(val); }" />
             <span class="input-group-text">Div.</span>
             <input class="form-control choose-track-division" type="number" min="0" v-model="$props.track.division" />
           </div>
         </div>
       </div>
       <div class="col-12" v-if="computedView === 'expand'">
+        <StepsSequencer v-model="$props.track.rythmDefinition" />
+      </div>
+      <div class="col-12" v-if="computedView === 'expand'">
         <div class="input-group input-group">
-          <span class="input-group-text">Density</span>
-          <input class="form-control" type="number" min="0" max="64" v-model="$props.track.rythmDensity" />
+          <span class="input-group-text" v-if="$props.track.rythmMode === 'euclidean'">Density</span>
+          <input class="form-control" v-if="$props.track.rythmMode === 'euclidean'" type="number" min="0" max="64" v-model="$props.track.rythmDensity" />
           <span class="input-group-text">Proba.</span>
           <input class="form-control" type="number" min="0" max="100" v-model="$props.track.proba" />
           <span class="input-group-text">V.Ampl.</span>

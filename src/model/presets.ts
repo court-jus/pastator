@@ -1,6 +1,8 @@
 "use strict";
 import type { PresetCategories } from "@/model/types";
 
+export const BarLength = 96;
+
 export const presets: PresetCategories = {
   bass: [
     {
@@ -9,7 +11,7 @@ export const presets: PresetCategories = {
       notes: [0],
       rythm: [100],
       octaves: [-1],
-      division: 96,
+      division: BarLength,
       playMode: "up",
       relatedTo: "chord",
     },
@@ -120,6 +122,42 @@ export const presets: PresetCategories = {
       relatedTo: "static",
     },
   ],
+};
+
+export const notesPresets = {
+
+};
+
+type RythmPreset = {
+  label: string;
+  rythm: number[];
+};
+
+export const rythmPresets: Record<string, RythmPreset> = {
+  "all": {
+    label: "All steps",
+    rythm: [100]
+  },
+  "1,3": {
+    label: "1 and 3",
+    rythm: [100, 0, 100, 0]
+  },
+  "2,4": {
+    label: "2 and 4",
+    rythm: [0, 100, 0, 100]
+  },
+  "cha": {
+    label: "cha-cha",
+    rythm: [100, 0, 100, 0, 100, 100, 100, 0]
+  },
+  "a": {
+    label: "a",
+    rythm: [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30]
+  },
+  "b": {
+    label: "b",
+    rythm:  [100, 90, 80, 70, 80, 80]
+  }
 };
 
 export const scales = {

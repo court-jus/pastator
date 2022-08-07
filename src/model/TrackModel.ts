@@ -1,5 +1,8 @@
 import type { Preset, SongData } from "./types";
 import { getNotes, playNote, stopNote } from "./engine";
+import { BarLength, rythmPresets } from "./presets";
+
+export type RythmMode = "manual" | "preset" | "16steps" | "euclidean";
 
 export class TrackModel {
   device: MIDIOutput;
@@ -15,6 +18,8 @@ export class TrackModel {
   playing: boolean;
   availableDegrees: number[];
   octaves: number[];
+  notesMode: "manual" | "preset" | "ponderated" | "random";
+  rythmMode: RythmMode;
   playMode: "up" | "dn" | "updn" | "random" | "atonce" | "strum";
   relatedTo: "chord" | "scale" | "invchord" | "static";
   gravityCenter?: number;
@@ -33,8 +38,10 @@ export class TrackModel {
   constructor(device: MIDIOutput) {
     this.device = device;
     this.channel = 0;
-    this.division = 96;
+    this.division = BarLength;
     this.gate = 90;
+    this.notesMode = "manual";
+    this.rythmMode = "preset";
     this.playMode = "random";
     this.relatedTo = "chord";
     this.transpose = 0;
@@ -196,7 +203,7 @@ export class TrackModel {
     return [lowLimit, highLimit];
   }
   rythm() {
-    if (this.rythmDensity) {
+    if (this.rythmDensity && this.rythmMode === 'euclidean') {
       // Euclidean Rythm
       this.rythmDefinition = [];
       for (let p = 0; p < 64; p++) {
@@ -241,6 +248,26 @@ export class TrackModel {
       this.emit(songData);
     }
   }
+  applyRythmMode(rythmMode: RythmMode) {
+    this.rythmMode = rythmMode;
+    if (this.rythmMode === '16steps') {
+      this.rythmDefinition = this.rythmDefinition.slice(0, 16);
+      if (this.rythmDefinition.length < 16) {
+        this.rythmDefinition.push(...(new Array(16 - this.rythmDefinition.length).fill(0)));
+      }
+    } else if (this.rythmMode === 'euclidean') {
+      // const refDivision = this.division === 0 ? BarLength : this.division;
+      const activeBeats = this.rythmDefinition.filter((beat: number) => beat > 0).length;
+      const newDensity = 64 / this.rythmDefinition.length * activeBeats;
+      this.rythmDensity = newDensity;
+      this.rythm();
+    }
+  }
+  applyRythmPreset(rythmId: string) {
+    if (rythmId === "nil") return;
+    const rythm = rythmPresets[rythmId].rythm;
+    this.rythmDefinition = rythm;
+  }
 }
 
 
@@ -262,5 +289,7 @@ export type SavedTrackModel = Omit<TrackModel,
   "getNotesLimits" |
   "rythm" |
   "presetChange" |
-  "currentChordChange"
+  "currentChordChange" |
+  "applyRythmPreset" |
+  "applyRythmMode"
 >;
