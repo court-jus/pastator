@@ -1,53 +1,31 @@
 import type { Preset, SongData } from "./types";
 import { getNotes, playNote, stopNote } from "./engine";
 
-export type SavedTrackModel = {
-  gate: number;
-  transpose: number;
-  baseVelocity: number;
-  division: number;
-  gravityCenter?: number;
-  gravityStrength?: number;
-  strumDelay: number;
-  availableDegrees: number[];
-  rythmDefinition: number[];
-  rythmDensity?: number;
-  velAmplitude?: number;
-  velCenter?: number;
-  proba?: number;
-  maxNotes?: number;
-  playMode: "up" | "dn" | "updn" | "random" | "atonce" | "strum",
-  relatedTo: "chord" | "scale" | "invchord" | "static",
-  channel: number;
-  presetId: string;
-  presetCategory: string;
-};
-
 export class TrackModel {
   device: MIDIOutput;
   channel: number;
   division: number;
-  gravityCenter?: number;
-  gravityStrength?: number;
   currentNotes: number[];
   gate: number;
   transpose: number;
   baseVelocity: number;
   strumDelay: number;
   rythmDefinition: number[];
+  position: number;
+  playing: boolean;
+  availableDegrees: number[];
+  octaves: number[];
+  playMode: "up" | "dn" | "updn" | "random" | "atonce" | "strum";
+  relatedTo: "chord" | "scale" | "invchord" | "static";
+  gravityCenter?: number;
+  gravityStrength?: number;
   rythmDensity?: number;
   velAmplitude?: number;
   velCenter?: number;
   proba?: number;
-  position: number;
-  playing: boolean;
   timeout?: number;
   lastNotes?: number[];
-  availableDegrees: number[];
-  octaves: number[];
   maxNotes?: number;
-  playMode: "up" | "dn" | "updn" | "random" | "atonce" | "strum";
-  relatedTo: "chord" | "scale" | "invchord" | "static";
   preset?: Preset;
   presetId?: string;
   presetCategory?: string;
@@ -72,48 +50,11 @@ export class TrackModel {
 
   // Load/Save/...
   load(trackData: SavedTrackModel) {
-    this.gate = trackData.gate;
-    this.transpose = trackData.transpose;
-    this.baseVelocity = trackData.baseVelocity;
-    this.division = trackData.division;
-    this.gravityCenter = trackData.gravityCenter;
-    this.gravityStrength = trackData.gravityStrength;
-    this.strumDelay = trackData.strumDelay;
-    this.rythmDefinition = trackData.rythmDefinition;
-    this.maxNotes = trackData.maxNotes;
-    this.playMode = trackData.playMode;
-    this.relatedTo = trackData.relatedTo;
-    this.channel = trackData.channel;
-    this.availableDegrees = trackData.availableDegrees;
-    this.presetId = trackData.presetId;
-    this.presetCategory = trackData.presetCategory;
-    this.rythmDensity = trackData.rythmDensity;
-    this.proba = trackData.proba;
-    this.velAmplitude = trackData.velAmplitude;
-    this.velCenter = trackData.velCenter;
+    Object.assign(this, trackData);
   }
   save() {
-    const dataToSave: SavedTrackModel = {
-      gate: this.gate,
-      transpose: this.transpose,
-      baseVelocity: this.baseVelocity,
-      division: this.division,
-      gravityCenter: this.gravityCenter,
-      gravityStrength: this.gravityStrength,
-      strumDelay: this.strumDelay,
-      rythmDefinition: this.rythmDefinition,
-      maxNotes: this.maxNotes,
-      playMode: this.playMode,
-      relatedTo: this.relatedTo,
-      channel: this.channel,
-      availableDegrees: this.availableDegrees,
-      presetId: this.presetId || "nil",
-      presetCategory: this.presetCategory || "nil",
-      rythmDensity: this.rythmDensity,
-      proba: this.proba,
-      velAmplitude: this.velAmplitude,
-      velCenter: this.velCenter,
-    };
+    // internalKeys: "device", "position", "playing", "currentNotes"
+    const {device, position, playing, currentNotes, ...dataToSave} = this;
     return dataToSave;
   }
 
@@ -301,3 +242,25 @@ export class TrackModel {
     }
   }
 }
+
+
+export type SavedTrackModel = Omit<TrackModel,
+  "device" |
+  "position" |
+  "playing" |
+  "load" |
+  "save" |
+  "currentNotes" |
+  "play" |
+  "fullStop" |
+  "playpause" |
+  "stop" |
+  "emit" |
+  "receiveCC" |
+  "tick" |
+  "availableNotes" |
+  "getNotesLimits" |
+  "rythm" |
+  "presetChange" |
+  "currentChordChange"
+>;

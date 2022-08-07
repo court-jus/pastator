@@ -283,7 +283,6 @@ export default defineComponent({
         this.fileName.toLowerCase().endsWith(".json") ? this.fileName : this.fileName + ".json"
       ) : "pastasong.json";
       download(filename, json);
-      console.log("Data to save", dataToSave);
     }
   },
   mounted() {
