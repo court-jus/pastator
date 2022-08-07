@@ -1,5 +1,5 @@
 "use strict";
-import type { PresetCategories } from "@/model/types";
+import type { DegreesRelation, PresetCategories } from "./types";
 
 export const BarLength = 96;
 
@@ -124,39 +124,78 @@ export const presets: PresetCategories = {
   ],
 };
 
-export const notesPresets = {
 
-};
-
-type RythmPreset = {
+type LabeledPreset = {
   label: string;
-  rythm: number[];
+  data: number[];
 };
 
-export const rythmPresets: Record<string, RythmPreset> = {
+export type NotesPreset = LabeledPreset & {
+  relatedTo: DegreesRelation;
+};
+
+export const notesPresets: Record<string, NotesPreset> = {
+  "root": {
+    label: "Root note",
+    data: [0],
+    relatedTo: "scale"
+  },
+  "power": {
+    label: "Power chord",
+    data: [0, 2, 10],
+    relatedTo: "chord"
+  },
+  "widechord": {
+    label: "Wide chord",
+    data: [0, 1, 2, 10],
+    relatedTo: "chord"
+  },
+  "groovy": {
+    label: "Groovy",
+    data: [0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 10, 10],
+    relatedTo: "chord"
+  },
+  "widey": {
+    label: "Widey",
+    data: [0, 1, 2, 3, 4, 5],
+    relatedTo: "chord"
+  },
+  "scale": {
+    label: "Whole scale",
+    data: [0, 1, 2, 3, 4, 5, 6, 7],
+    relatedTo: "scale"
+  },
+  "ponderatedscale": {
+    label: "Ponderated scale",
+    data: [0, 0, 0, 0, 1, 2, 2, 3, 4, 4, 4, 5, 6, 7, 7, 7],
+    relatedTo: "scale"
+  }
+};
+
+export const rythmPresets: Record<string, LabeledPreset> = {
   "all": {
     label: "All steps",
-    rythm: [100]
+    data: [100]
   },
   "1,3": {
     label: "1 and 3",
-    rythm: [100, 0, 100, 0]
+    data: [100, 0, 100, 0]
   },
   "2,4": {
     label: "2 and 4",
-    rythm: [0, 100, 0, 100]
+    data: [0, 100, 0, 100]
   },
   "cha": {
     label: "cha-cha",
-    rythm: [100, 0, 100, 0, 100, 100, 100, 0]
+    data: [100, 0, 100, 0, 100, 100, 100, 0]
   },
   "a": {
     label: "a",
-    rythm: [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30]
+    data: [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30]
   },
   "b": {
     label: "b",
-    rythm:  [100, 90, 80, 70, 80, 80]
+    data:  [100, 90, 80, 70, 80, 80]
   }
 };
 

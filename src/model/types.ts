@@ -24,3 +24,5 @@ export interface Preset {
 }
 
 export type PresetCategories = Record<string, Preset[]>;
+
+export type DegreesRelation = "chord" | "scale" | "invchord" | "static";

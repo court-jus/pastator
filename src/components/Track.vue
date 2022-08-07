@@ -7,6 +7,8 @@ import PresetSelect from "./PresetSelect.vue";
 import ConfirmButton from "./ConfirmButton.vue";
 import StepsSequencer from "./StepsSequencer.vue";
 import RythmPresetSelector from "./RythmPresetSelector.vue";
+import NotesPresetSelector from "./NotesPresetSelector.vue";
+import type { NotesPreset } from "@/model/presets";
 
 interface Props {
   track: TrackModel
@@ -139,7 +141,8 @@ export default defineComponent({
               <option value="ponderated">Ponderated</option>
               <option value="random">Random</option>
             </select>
-            <NumberListInput v-model="$props.track.availableDegrees" />
+            <NumberListInput v-if="$props.track.notesMode === 'manual'" v-model="$props.track.availableDegrees" />
+            <NotesPresetSelector v-if="$props.track.notesMode === 'preset'" @preset-change="(presetId: string) => { $props.track.applyNotesPreset(presetId); }" />
             <span class="input-group-text">{{ notesIndicator }}</span>
           </div>
         </div>

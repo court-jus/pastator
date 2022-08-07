@@ -1,6 +1,6 @@
-import type { Preset, SongData } from "./types";
+import type { DegreesRelation, Preset, SongData } from "./types";
 import { getNotes, playNote, stopNote } from "./engine";
-import { BarLength, rythmPresets } from "./presets";
+import { BarLength, rythmPresets, notesPresets } from "./presets";
 
 export type RythmMode = "manual" | "preset" | "16steps" | "euclidean";
 
@@ -21,7 +21,7 @@ export class TrackModel {
   notesMode: "manual" | "preset" | "ponderated" | "random";
   rythmMode: RythmMode;
   playMode: "up" | "dn" | "updn" | "random" | "atonce" | "strum";
-  relatedTo: "chord" | "scale" | "invchord" | "static";
+  relatedTo: DegreesRelation;
   gravityCenter?: number;
   gravityStrength?: number;
   rythmDensity?: number;
@@ -265,8 +265,14 @@ export class TrackModel {
   }
   applyRythmPreset(rythmId: string) {
     if (rythmId === "nil") return;
-    const rythm = rythmPresets[rythmId].rythm;
+    const rythm = rythmPresets[rythmId].data;
     this.rythmDefinition = rythm;
+  }
+  applyNotesPreset(presetId: string) {
+    if (presetId === "nil") return;
+    const notes = notesPresets[presetId];
+    this.availableDegrees = notes.data;
+    this.relatedTo = notes.relatedTo;
   }
 }
 
@@ -291,5 +297,6 @@ export type SavedTrackModel = Omit<TrackModel,
   "presetChange" |
   "currentChordChange" |
   "applyRythmPreset" |
-  "applyRythmMode"
+  "applyRythmMode" |
+  "applyNotesPreset"
 >;
