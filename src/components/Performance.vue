@@ -290,9 +290,6 @@ export default defineComponent({
     if (localStorage.getItem("skipPerfTour") !== "true") {
       this.$tours["perfTour"].start();
     }
-    this.addTrack();
-    this.addTrack();
-    this.addTrack();
   }
 });
 </script>

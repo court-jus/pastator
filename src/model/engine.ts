@@ -1,50 +1,103 @@
 import { scales, chords } from "./presets";
 import type { SongData } from "@/model/types";
+import type { MelotorModel } from "./TrackModel";
 
-export const getNotes = (song: SongData, notes: number[], octaves: number[], relatedTo: string) => {
+export const getNotes = (
+  song: SongData,
+  notes: number[],
+  octaves: number[],
+  relatedTo: string
+) => {
   if (relatedTo === "static") {
     // Keep the notes as they are
     return notes;
   }
   const scaleScheme = scales[song.scale];
   const candidateNotes =
-    (relatedTo === "chord" || relatedTo === "invchord")
+    relatedTo === "chord" || relatedTo === "invchord"
       ? chords[song.currentChordType].map((noteDegree: number) => {
-        const targetNote = noteDegree - 1 + (song.currentChord - 1);
-        return scaleScheme[targetNote % scaleScheme.length] + (
-          relatedTo === "chord" ?
-          12 * Math.trunc(targetNote / scaleScheme.length)
-          : 0
-        );
-      })
+          const targetNote = noteDegree - 1 + (song.currentChord - 1);
+          return (
+            scaleScheme[targetNote % scaleScheme.length] +
+            (relatedTo === "chord"
+              ? 12 * Math.trunc(targetNote / scaleScheme.length)
+              : 0)
+          );
+        })
       : scaleScheme;
   const result = [];
   for (const octave of octaves) {
     result.push(
-      ...notes.map((requiredNote) => {
-        // We consider that a chord will never contain more than 10 notes
-        // so if the requiredNote is 10 or more, that's an octave above
-        const rotated = requiredNote % 10;
-        const octaveShift = Math.trunc(requiredNote / 10);
-        if (candidateNotes.length <= rotated) return 0;
-        return (
-          song.rootNote +
-          12 * (octave + octaveShift) +
-          candidateNotes[rotated % candidateNotes.length] +
-          12 * Math.trunc(rotated / candidateNotes.length)
-        );
-      }).filter(value => value > 0)
+      ...notes
+        .map((requiredNote) => {
+          // We consider that a chord will never contain more than 10 notes
+          // so if the requiredNote is 10 or more, that's an octave above
+          const rotated = requiredNote % 10;
+          const octaveShift = Math.trunc(requiredNote / 10);
+          if (candidateNotes.length <= rotated) return 0;
+          return (
+            song.rootNote +
+            12 * (octave + octaveShift) +
+            candidateNotes[rotated % candidateNotes.length] +
+            12 * Math.trunc(rotated / candidateNotes.length)
+          );
+        })
+        .filter((value) => value > 0)
     );
   }
-  return (
-    relatedTo === "invchord" ?
-    result.sort():
-    result
-  );
+  return relatedTo === "invchord" ? result.sort() : result;
 };
 
-export const playNote = (port: MIDIOutput, channel: number, note: number, velocity: number) => {
-  if (note > -1 && note < 128) port.send([0x80 | (1 << 4) | channel, note, velocity]);
+export const computeMelotor = (
+  melotor: MelotorModel,
+  position: number
+): number[] => {
+  if (
+    melotor.currentMelo.length > 0 &&
+    position % melotor.meloChangeDiv !== 0
+  ) {
+    return melotor.currentMelo;
+  }
+  const availableNotes = [0, 1, 2, 3, 4, 5, 6, 7]; // TODO: read that from Song Data
+  const ponderatedNotes = availableNotes.reduce(
+    (acc: number[], note: number, idx: number): number[] => {
+      const proba = melotor.notesProbabilities[idx] || 0;
+      const copied = new Array(proba).fill(note);
+      return [...acc, ...copied];
+    },
+    []
+  );
+  const melo = [...melotor.currentMelo];
+  if (melo.length === 0) {
+    while (melo.length < melotor.meloLength) {
+      const idx = Math.trunc(Math.random() * ponderatedNotes.length);
+      const candidate = ponderatedNotes[idx];
+      melo.push(candidate);
+    }
+  } else {
+    let indexes = new Array(melotor.meloLength).fill(1).map((_, idx) => idx);
+    let howManyToChange = Math.ceil(
+      (melotor.meloChangeStrength / 100) * melotor.meloLength
+    );
+    while (howManyToChange === undefined || howManyToChange > 0) {
+      const chosen = indexes[Math.trunc(Math.random() * indexes.length)];
+      melo[chosen] =
+        ponderatedNotes[Math.trunc(Math.random() * ponderatedNotes.length)];
+      howManyToChange -= 1;
+      indexes.splice(chosen, 1);
+    }
+  }
+  return melo;
+};
+
+export const playNote = (
+  port: MIDIOutput,
+  channel: number,
+  note: number,
+  velocity: number
+) => {
+  if (note > -1 && note < 128)
+    port.send([0x80 | (1 << 4) | channel, note, velocity]);
 };
 
 export const stopNote = (port: MIDIOutput, channel: number, note: number) => {
@@ -53,16 +106,32 @@ export const stopNote = (port: MIDIOutput, channel: number, note: number) => {
 
 export const noteNumberToName = (note: number, showOctave = true): string => {
   // C4 = 60
-  const noteName = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][note % 12];
+  const noteName = [
+    "C",
+    "C#",
+    "D",
+    "D#",
+    "E",
+    "F",
+    "F#",
+    "G",
+    "G#",
+    "A",
+    "A#",
+    "B",
+  ][note % 12];
   const octave = Math.trunc(note / 12) - 1;
-  return /* note.toString() + ":" + */noteName + (showOctave ? octave.toString(): "");
+  return (
+    /* note.toString() + ":" + */ noteName +
+    (showOctave ? octave.toString() : "")
+  );
 };
 
-
-export function isMIDIMessageEvent(event: Event | MIDIMessageEvent): event is MIDIMessageEvent {
+export function isMIDIMessageEvent(
+  event: Event | MIDIMessageEvent
+): event is MIDIMessageEvent {
   return (event as MIDIMessageEvent).data !== undefined;
-};
-
+}
 
 export const getMIDIMessage = (message: MIDIMessageEvent) => {
   let type = "";

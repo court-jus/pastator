@@ -1,5 +1,13 @@
 import type { Preset, SongData } from "./types";
-import { getNotes, playNote, stopNote } from "./engine";
+import { computeMelotor, getNotes, playNote, stopNote } from "./engine";
+
+export type MelotorModel = {
+  notesProbabilities: number[];
+  currentMelo: number[];
+  meloLength: number;
+  meloChangeDiv: number;
+  meloChangeStrength: number;
+};
 
 export type SavedTrackModel = {
   gate: number;
@@ -16,11 +24,13 @@ export type SavedTrackModel = {
   velCenter?: number;
   proba?: number;
   maxNotes?: number;
-  playMode: "up" | "dn" | "updn" | "random" | "atonce" | "strum",
-  relatedTo: "chord" | "scale" | "invchord" | "static",
+  playMode: "up" | "dn" | "updn" | "random" | "atonce" | "strum";
+  relatedTo: "chord" | "scale" | "invchord" | "static";
   channel: number;
   presetId: string;
   presetCategory: string;
+  octaves?: number[];
+  melotor?: MelotorModel;
 };
 
 export class TrackModel {
@@ -51,6 +61,7 @@ export class TrackModel {
   preset?: Preset;
   presetId?: string;
   presetCategory?: string;
+  melotor?: MelotorModel;
 
   constructor(device: MIDIOutput) {
     this.device = device;
@@ -91,6 +102,8 @@ export class TrackModel {
     this.proba = trackData.proba;
     this.velAmplitude = trackData.velAmplitude;
     this.velCenter = trackData.velCenter;
+    this.melotor = trackData.melotor;
+    this.octaves = trackData.octaves || [0];
   }
   save() {
     const dataToSave: SavedTrackModel = {
@@ -113,6 +126,8 @@ export class TrackModel {
       proba: this.proba,
       velAmplitude: this.velAmplitude,
       velCenter: this.velCenter,
+      melotor: this.melotor,
+      octaves: this.octaves,
     };
     return dataToSave;
   }
@@ -168,12 +183,7 @@ export class TrackModel {
         window.setTimeout(() => {
           if (!this.playing) return;
           this.currentNotes.push(note + this.transpose);
-          playNote(
-            this.device,
-            this.channel,
-            note + this.transpose,
-            velocity
-          );
+          playNote(this.device, this.channel, note + this.transpose, velocity);
         }, delay);
         delay += this.playMode === "strum" ? this.strumDelay : 0;
       }
@@ -211,7 +221,7 @@ export class TrackModel {
     } else if (this.gate < 100) {
       const pcLow = ((newClock % this.division) / this.division) * 100;
       const pcHigh = (((newClock + 1) % this.division) / this.division) * 100;
-      if (pcHigh < pcLow || pcLow < this.gate && pcHigh >= this.gate) {
+      if (pcHigh < pcLow || (pcLow < this.gate && pcHigh >= this.gate)) {
         this.stop();
       }
     }
@@ -219,33 +229,41 @@ export class TrackModel {
 
   // Music
   availableNotes(songData: SongData) {
+    if (this.melotor !== undefined) {
+      this.melotor.currentMelo = computeMelotor(this.melotor, this.position);
+      this.availableDegrees = this.melotor.currentMelo;
+    }
     const candidateNotes = getNotes(
       songData,
       this.availableDegrees,
       this.octaves,
       this.relatedTo
     );
-    if (
-      !this.gravityCenter ||
-      !this.gravityStrength
-    ) {
+    if (!this.gravityCenter || !this.gravityStrength) {
       return candidateNotes;
     }
     const [lowLimit, highLimit] = this.getNotesLimits();
-    const [lowCandidate, highCandidate] = [Math.min(...candidateNotes), Math.max(...candidateNotes)];
-    const candidatesCenter = Math.trunc((highCandidate - lowCandidate) / 2) + lowCandidate;
+    const [lowCandidate, highCandidate] = [
+      Math.min(...candidateNotes),
+      Math.max(...candidateNotes),
+    ];
+    const candidatesCenter =
+      Math.trunc((highCandidate - lowCandidate) / 2) + lowCandidate;
     const shift = this.gravityCenter - candidatesCenter;
-    return candidateNotes.map((note: number) => note + shift).map((note: number) => {
-      if (note < lowLimit) {
-        const transp = lowLimit - note;
-        return note + transp + (12 - (transp % 12));
-      }
-      if (note > highLimit) {
-        const transp = note - highLimit;
-        return note - transp - (12 - (transp % 12));
-      }
-      return note;
-    }).sort();
+    return candidateNotes
+      .map((note: number) => note + shift)
+      .map((note: number) => {
+        if (note < lowLimit) {
+          const transp = lowLimit - note;
+          return note + transp + (12 - (transp % 12));
+        }
+        if (note > highLimit) {
+          const transp = note - highLimit;
+          return note - transp - (12 - (transp % 12));
+        }
+        return note;
+      })
+      .sort();
   }
   getNotesLimits() {
     if (!this.gravityCenter || !this.gravityStrength) return [];
