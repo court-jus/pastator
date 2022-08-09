@@ -1,6 +1,14 @@
 import type { DegreesRelation, Preset, SongData } from "./types";
-import { getNotes, playNote, stopNote } from "./engine";
+import { computeMelotor, getNotes, playNote, stopNote } from "./engine";
 import { BarLength, rythmPresets, notesPresets } from "./presets";
+
+export type MelotorModel = {
+  notesProbabilities: number[];
+  currentMelo: number[];
+  meloLength: number;
+  meloChangeDiv: number;
+  meloChangeStrength: number;
+};
 
 export type RythmMode = "manual" | "preset" | "16steps" | "euclidean";
 
@@ -34,6 +42,7 @@ export class TrackModel {
   preset?: Preset;
   presetId?: string;
   presetCategory?: string;
+  melotor?: MelotorModel;
 
   constructor(device: MIDIOutput) {
     this.device = device;
@@ -159,7 +168,7 @@ export class TrackModel {
     } else if (this.gate < 100) {
       const pcLow = ((newClock % this.division) / this.division) * 100;
       const pcHigh = (((newClock + 1) % this.division) / this.division) * 100;
-      if (pcHigh < pcLow || pcLow < this.gate && pcHigh >= this.gate) {
+      if (pcHigh < pcLow || (pcLow < this.gate && pcHigh >= this.gate)) {
         this.stop();
       }
     }
@@ -167,6 +176,10 @@ export class TrackModel {
 
   // Music
   availableNotes(songData: SongData) {
+    if (this.melotor !== undefined) {
+      this.melotor.currentMelo = computeMelotor(this.melotor, this.position);
+      this.availableDegrees = this.melotor.currentMelo;
+    }
     const candidateNotes = getNotes(
       songData,
       this.availableDegrees,
@@ -183,17 +196,20 @@ export class TrackModel {
     const [lowCandidate, highCandidate] = [Math.min(...candidateNotes), Math.max(...candidateNotes)];
     const candidatesCenter = Math.trunc((highCandidate - lowCandidate) / 2) + lowCandidate;
     const shift = this.gravityCenter - candidatesCenter;
-    return candidateNotes.map((note: number) => note + shift).map((note: number) => {
-      if (note < lowLimit) {
-        const transp = lowLimit - note;
-        return note + transp + (12 - (transp % 12));
-      }
-      if (note > highLimit) {
-        const transp = note - highLimit;
-        return note - transp - (12 - (transp % 12));
-      }
-      return note;
-    }).sort();
+    return candidateNotes
+      .map((note: number) => note + shift)
+      .map((note: number) => {
+        if (note < lowLimit) {
+          const transp = lowLimit - note;
+          return note + transp + (12 - (transp % 12));
+        }
+        if (note > highLimit) {
+          const transp = note - highLimit;
+          return note - transp - (12 - (transp % 12));
+        }
+        return note;
+      })
+      .sort();
   }
   getNotesLimits() {
     if (!this.gravityCenter || !this.gravityStrength) return [];
