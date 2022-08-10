@@ -50,15 +50,17 @@ export const getNotes = (
 
 export const computeMelotor = (
   melotor: MelotorModel,
-  position: number
+  position: number,
+  force = false
 ): number[] => {
   if (
     melotor.currentMelo.length > 0 &&
-    position % melotor.meloChangeDiv !== 0
+    (position % melotor.meloChangeDiv) !== 0 &&
+    !force
   ) {
     return melotor.currentMelo;
   }
-  const availableNotes = [0, 1, 2, 3, 4, 5, 6, 7]; // TODO: read that from Song Data
+  const availableNotes = [0, 1, 2, 3, 4, 5, 6]; // TODO: read that from Song Data
   const ponderatedNotes = availableNotes.reduce(
     (acc: number[], note: number, idx: number): number[] => {
       const proba = melotor.notesProbabilities[idx] || 0;
@@ -67,6 +69,9 @@ export const computeMelotor = (
     },
     []
   );
+  if (ponderatedNotes.length === 0) {
+    ponderatedNotes.push(0);
+  }
   const melo = [...melotor.currentMelo];
   if (melo.length === 0) {
     while (melo.length < melotor.meloLength) {

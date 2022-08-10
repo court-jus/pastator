@@ -288,14 +288,23 @@ export default defineComponent({
     if (localStorage.getItem("skipPerfTour") !== "true") {
       this.$tours["perfTour"].start();
     }
+    /*
     const newTrack = new TrackModel(this.$props.device);
-    newTrack.channel = 0;
-    newTrack.relatedTo = "invchord";
-    newTrack.playMode = "atonce";
+    newTrack.channel = 1;
+    newTrack.relatedTo = "scale";
+    newTrack.playMode = "up";
     newTrack.availableDegrees = [0, 2, 10];
-    newTrack.rythmDefinition = [100, 0, 100, 0, 100, 100, 100, 0];
-    newTrack.division = 24;
+    newTrack.division = 12;
+    newTrack.octaves = [-1];
+    newTrack.applyRythmMode("16steps");
+    newTrack.rythmDefinition = new Array(16).fill(80);
+    newTrack.velAmplitude = 15;
+    newTrack.velCenter = 80;
+    newTrack.proba = 80;
+    newTrack.applyNotesMode("melotor");
     this.addTrack(newTrack);
+    newTrack.playpause(this.songData);
+    */
   }
 });
 </script>

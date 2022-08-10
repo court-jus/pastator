@@ -11,6 +11,7 @@ export type MelotorModel = {
 };
 
 export type RythmMode = "manual" | "preset" | "16steps" | "euclidean";
+export type NotesMode = "manual" | "preset" | "ponderated" | "melotor" | "random";
 
 export class TrackModel {
   device: MIDIOutput;
@@ -26,7 +27,7 @@ export class TrackModel {
   playing: boolean;
   availableDegrees: number[];
   octaves: number[];
-  notesMode: "manual" | "preset" | "ponderated" | "random";
+  notesMode: NotesMode;
   rythmMode: RythmMode;
   playMode: "up" | "dn" | "updn" | "random" | "atonce" | "strum";
   relatedTo: DegreesRelation;
@@ -44,6 +45,7 @@ export class TrackModel {
   presetCategory?: string;
   melotor?: MelotorModel;
   singleShots?: number;
+  debug?: boolean;
 
   constructor(device: MIDIOutput) {
     this.device = device;
@@ -128,6 +130,7 @@ export class TrackModel {
         : [availableNotes[0]];
     const velocity = this.rythm();
     if (velocity > 0 && this.channel !== undefined) {
+      if (this.debug) console.log(this.channel, "emit", playedNotes, "at", this.position);
       let delay = 0;
       for (const note of playedNotes) {
         if (this.strumDelay > 0) {
@@ -177,8 +180,10 @@ export class TrackModel {
       if (
         this.playing ||
         (this.singleShots !== undefined && this.singleShots > 0)
-      )
+      ) {
+        if (this.debug) console.log(this.channel, "advance at", newClock, "pos", this.position);
         this.emit(songData);
+      }
     } else if (this.gate < 100) {
       const pcLow = ((newClock % this.division) / this.division) * 100;
       const pcHigh = (((newClock + 1) % this.division) / this.division) * 100;
@@ -191,8 +196,7 @@ export class TrackModel {
   // Music
   availableNotes(songData: SongData) {
     if (this.melotor !== undefined) {
-      this.melotor.currentMelo = computeMelotor(this.melotor, this.position);
-      this.availableDegrees = this.melotor.currentMelo;
+      this.recomputeMelotor();
     }
     const candidateNotes = getNotes(
       songData,
@@ -293,6 +297,20 @@ export class TrackModel {
       this.rythm();
     }
   }
+  applyNotesMode(notesMode : NotesMode) {
+    this.notesMode = notesMode;
+    if (this.notesMode === 'melotor' && this.melotor === undefined) {
+      this.playMode = "up";
+      this.melotor = {
+        currentMelo: [],
+        meloChangeDiv: BarLength / this.division,
+        meloChangeStrength: 20,
+        meloLength: 8,
+        notesProbabilities: [100, 20, 60, 25, 40, 30, 50]
+      }
+      this.melotor.currentMelo = computeMelotor(this.melotor, this.position);
+    }
+  }
   applyRythmPreset(rythmId: string) {
     if (rythmId === "nil") return;
     const rythm = rythmPresets[rythmId].data;
@@ -304,6 +322,13 @@ export class TrackModel {
     this.availableDegrees = notes.data;
     this.relatedTo = notes.relatedTo;
   }
+  recomputeMelotor(force = false) {
+    if (this.melotor) {
+      this.melotor.currentMelo = computeMelotor(this.melotor, this.position, force);
+      this.availableDegrees = this.melotor.currentMelo;
+    }
+  }
+
 }
 
 
@@ -328,5 +353,8 @@ export type SavedTrackModel = Omit<TrackModel,
   "currentChordChange" |
   "applyRythmPreset" |
   "applyRythmMode" |
-  "applyNotesPreset"
+  "applyNotesPreset" |
+  "applyNotesMode" |
+  "addSingleShot" |
+  "recomputeMelotor"
 >;

@@ -2,7 +2,7 @@
 import NumberListInput from "./NumberListInput.vue";
 import type { Preset, SongData } from "@/model/types";
 import { noteNumberToName } from "@/model/engine";
-import type { TrackModel, RythmMode } from "@/model/TrackModel";
+import type { TrackModel, RythmMode, NotesMode } from "@/model/TrackModel";
 import PresetSelect from "./PresetSelect.vue";
 import ConfirmButton from "./ConfirmButton.vue";
 import StepsSequencer from "./StepsSequencer.vue";
@@ -104,8 +104,8 @@ export default defineComponent({
       <div class="row">
         <div class="col-2">
           <div class="btn-group" role="group">
-            <button @click="() => $props.track.playpause($props.songData)" class="btn btn-outline-primary playpause-track" title="Play/Pause track">
-              <i :class="'bi bi-' + ($props.track.playing ? 'pause' : 'play') + '-fill'"></i>
+            <button @click="() => track.playpause($props.songData)" class="btn btn-outline-primary playpause-track" title="Play/Pause track">
+              <i :class="'bi bi-' + (track.playing ? 'pause' : 'play') + '-fill'"></i>
             </button>
             <ConfirmButton label="Remove track" @confirmed="removeTrack">
               <i class="bi bi-trash-fill"></i>
@@ -113,24 +113,24 @@ export default defineComponent({
             <button class="btn btn-outline-primary change-track-view" @click="cycleView">
               <i class="bi bi-eye-fill"></i>
             </button>
-            <button class="btn btn-outline-primary" @click="$props.track.addSingleShot">
-              <i class="bi bi-eye-fill" v-if="$props.track.singleShots === undefined"></i>
-              <span v-else>{{ $props.track.singleShots }}</span>
+            <button class="btn btn-outline-primary" @click="track.addSingleShot">
+              <i class="bi bi-eye-fill" v-if="track.singleShots === undefined"></i>
+              <span v-else>{{ track.singleShots }}</span>
             </button>
           </div>
         </div>
         <div class="col-4">
           <div class="input-group" role="group">
             <span class="input-group-text">Channel</span>
-            <input class="form-control form-control-sm choose-track-channel" type="number" min="0" max="15" v-model="$props.track.channel" title="MIDI Channel driven by this track"/>
+            <input class="form-control form-control-sm choose-track-channel" type="number" min="0" max="15" v-model="track.channel" title="MIDI Channel driven by this track"/>
             <span class="input-group-text">Vol.</span>
-            <input class="form-control choose-track-base-velocity" type="number" min="0" max="100" v-model="$props.track.baseVelocity" />
+            <input class="form-control choose-track-base-velocity" type="number" min="0" max="100" v-model="track.baseVelocity" />
           </div>
         </div>
         <div class="col-6">
           <div class="choose-track-preset">
-            <PresetSelect :data="presets" :selectedCategory="$props.track.presetCategory"
-              :selectedPreset="$props.track.presetId" @preset-change="(newPreset) => { $props.track.presetChange(newPreset); }" />
+            <PresetSelect :data="presets" :selectedCategory="track.presetCategory"
+              :selectedPreset="track.presetId" @preset-change="(newPreset) => { track.presetChange(newPreset); }" />
           </div>
         </div>
       </div>
@@ -139,20 +139,22 @@ export default defineComponent({
       <div class="row">
         <div class="col-6">
           <div class="edit-track-notes input-group">
-            <select class="input-group-text form-select" v-model="$props.track.notesMode">
+            <select class="input-group-text form-select" v-model="track.notesMode" @change="(ev: Event) => track.applyNotesMode((ev.target as HTMLSelectElement).value as NotesMode)">
               <option value="manual">Manual</option>
               <option value="preset">Preset</option>
               <option value="ponderated">Ponderated</option>
+              <option value="melotor">Melotor</option>
               <option value="random">Random</option>
             </select>
-            <NumberListInput v-if="$props.track.notesMode === 'manual'" v-model="$props.track.availableDegrees" />
-            <NotesPresetSelector v-if="$props.track.notesMode === 'preset'" @preset-change="(presetId: string) => { $props.track.applyNotesPreset(presetId); }" />
-            <span class="input-group-text">{{ notesIndicator }}</span>
+            <NumberListInput v-if="track.notesMode === 'manual'" v-model="track.availableDegrees" />
+            <NumberListInput v-if="track.notesMode === 'melotor' && track.melotor" v-model="track.melotor.currentMelo" />
+            <NotesPresetSelector v-if="track.notesMode === 'preset'" @preset-change="(presetId: string) => { track.applyNotesPreset(presetId); }" />
+            <span v-if="track.notesMode !== 'melotor'" class="input-group-text">{{ notesIndicator }}</span>
           </div>
         </div>
         <div class="col-6">
           <div class="input-group" role="group">
-            <select class="form-select choose-track-play-mode" v-model="$props.track.playMode">
+            <select v-if="track.notesMode !== 'melotor'" class="form-select choose-track-play-mode" v-model="track.playMode">
               <option value="nil">----</option>
               <option value="up">Up</option>
               <option value="dn">Down</option>
@@ -161,7 +163,7 @@ export default defineComponent({
               <option value="atonce">Chord</option>
               <option value="strum">Strum</option>
             </select>
-            <select class="form-select choose-track-related-to" v-model="$props.track.relatedTo">
+            <select v-if="track.notesMode !== 'melotor'" class="form-select choose-track-related-to" v-model="track.relatedTo">
               <option value="nil">----</option>
               <option value="scale">Scale</option>
               <option value="chord">Chord</option>
@@ -169,9 +171,16 @@ export default defineComponent({
               <option value="static">Static</option>
             </select>
             <span class="input-group-text">Gravity</span>
-            <input class="form-control choose-track-gravity-center" type="number" min="0" max="127" v-model="$props.track.gravityCenter" />
-            <input class="form-control choose-track-gravity-strength" type="number" min="0" max="27" v-model="$props.track.gravityStrength" />
+            <input class="form-control choose-track-gravity-center" type="number" min="0" max="127" v-model="track.gravityCenter" />
+            <input class="form-control choose-track-gravity-strength" type="number" min="0" max="27" v-model="track.gravityStrength" />
           </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12" v-if="computedView !== 'reduced' && track.notesMode === 'melotor' && track.melotor?.notesProbabilities !== undefined">
+      <div class="row mt-1 mb-1">
+        <div class="col-1" v-for="(noteProba, idx) of track.melotor.notesProbabilities">
+          <Slider :model-value="noteProba" @update:model-value="(newVal) => { if(track.melotor) { track.melotor.notesProbabilities[idx] = newVal; track.recomputeMelotor(true); } }"/>
         </div>
       </div>
     </div>
@@ -179,32 +188,32 @@ export default defineComponent({
       <div class="row">
         <div class="col-12">
           <div class="edit-track-rythm input-group">
-            <select class="input-group-text form-select" v-model="$props.track.rythmMode" @change="(ev: Event) => $props.track.applyRythmMode((ev.target as HTMLSelectElement).value as RythmMode)">
+            <select class="input-group-text form-select" v-model="track.rythmMode" @change="(ev: Event) => track.applyRythmMode((ev.target as HTMLSelectElement).value as RythmMode)">
               <option value="manual">Manual</option>
               <option value="preset">Preset</option>
               <option value="16steps">16 steps</option>
               <option value="euclidean">Euclidean</option>
             </select>
-            <NumberListInput class="w-50" v-if="$props.track.rythmMode === 'manual'" v-model="$props.track.rythmDefinition" />
-            <RythmPresetSelector v-if="$props.track.rythmMode === 'preset'" @preset-change="(val) => { $props.track.applyRythmPreset(val); }" />
+            <NumberListInput class="w-50" v-if="track.rythmMode === 'manual'" v-model="track.rythmDefinition" />
+            <RythmPresetSelector v-if="track.rythmMode === 'preset'" @preset-change="(val) => { track.applyRythmPreset(val); }" />
             <span class="input-group-text">Div.</span>
-            <input class="form-control choose-track-division" type="number" min="0" v-model="$props.track.division" />
+            <input class="form-control choose-track-division" type="number" min="0" v-model="track.division" />
           </div>
         </div>
       </div>
       <div class="col-12" v-if="computedView === 'expand'">
-        <StepsSequencer v-model="$props.track.rythmDefinition" />
+        <StepsSequencer v-model="track.rythmDefinition" />
       </div>
       <div class="col-12" v-if="computedView === 'expand'">
         <div class="input-group input-group">
-          <span class="input-group-text" v-if="$props.track.rythmMode === 'euclidean'">Density</span>
-          <input class="form-control" v-if="$props.track.rythmMode === 'euclidean'" type="number" min="0" max="64" v-model="$props.track.rythmDensity" />
+          <span class="input-group-text" v-if="track.rythmMode === 'euclidean'">Density</span>
+          <input class="form-control" v-if="track.rythmMode === 'euclidean'" type="number" min="0" max="64" v-model="track.rythmDensity" />
           <span class="input-group-text">Proba.</span>
-          <input class="form-control" type="number" min="0" max="100" v-model="$props.track.proba" />
+          <input class="form-control" type="number" min="0" max="100" v-model="track.proba" />
           <span class="input-group-text">V.Ampl.</span>
-          <input class="form-control" type="number" min="0" :max="100 - ($props.track.velCenter || 0)" v-model="$props.track.velAmplitude" />
+          <input class="form-control" type="number" min="0" :max="100 - (track.velCenter || 0)" v-model="track.velAmplitude" />
           <span class="input-group-text">V.Center</span>
-          <input class="form-control" type="number" :min="$props.track.velAmplitude || 0" :max="100 - ($props.track.velAmplitude || 0)" v-model="$props.track.velCenter" />
+          <input class="form-control" type="number" :min="track.velAmplitude || 0" :max="100 - (track.velAmplitude || 0)" v-model="track.velCenter" />
         </div>
       </div>
       <div class="col-12" v-if="computedView === 'expand'">
@@ -212,23 +221,20 @@ export default defineComponent({
           <div class="col-2">
             <div class="input-group" role="group">
               <span class="input-group-text">Strum</span>
-              <input class="form-control" type="number" min="0" v-model="$props.track.strumDelay" />
+              <input class="form-control" type="number" min="0" v-model="track.strumDelay" />
             </div>
           </div>
           <div class="col-2">
             <div class="input-group" role="group">
               <span class="input-group-text">Gate</span>
-              <input class="form-control" type="number" min="0" max="100" v-model="$props.track.gate" />
+              <input class="form-control" type="number" min="0" max="100" v-model="track.gate" />
             </div>
           </div>
           <div class="col-2">
             <div class="edit-track-notes input-group">
               <span class="input-group-text">Octaves</span>
-              <NumberListInput v-model="$props.track.octaves" />
+              <NumberListInput v-model="track.octaves" />
             </div>
-          </div>
-          <div class="col-2">
-            <Slider />
           </div>
         </div>
       </div>
@@ -238,22 +244,22 @@ export default defineComponent({
         <div class="col-3">
           <div class="input-group" role="group">
             <span class="input-group-text">Gravity</span>
-            <input class="form-control choose-track-gravity-center" type="number" min="0" max="127" v-model="$props.track.gravityCenter" />
-            <input class="form-control choose-track-gravity-strength" type="number" min="0" max="27" v-model="$props.track.gravityStrength" />
+            <input class="form-control choose-track-gravity-center" type="number" min="0" max="127" v-model="track.gravityCenter" />
+            <input class="form-control choose-track-gravity-strength" type="number" min="0" max="27" v-model="track.gravityStrength" />
           </div>
         </div>
         <div class="col-9">
           <div class="input-group input-group">
             <span class="input-group-text">Div.</span>
-            <input class="form-control choose-track-division" type="number" min="0" v-model="$props.track.division" />
+            <input class="form-control choose-track-division" type="number" min="0" v-model="track.division" />
             <span class="input-group-text">Density</span>
-          <input class="form-control" type="number" min="0" max="64" v-model="$props.track.rythmDensity" />
+          <input class="form-control" type="number" min="0" max="64" v-model="track.rythmDensity" />
             <span class="input-group-text">Proba.</span>
-          <input class="form-control" type="number" min="0" max="100" v-model="$props.track.proba" />
+          <input class="form-control" type="number" min="0" max="100" v-model="track.proba" />
             <span class="input-group-text">V.Ampl.</span>
-          <input class="form-control" type="number" min="0" max="100" v-model="$props.track.velAmplitude" />
+          <input class="form-control" type="number" min="0" max="100" v-model="track.velAmplitude" />
             <span class="input-group-text">V.Center</span>
-          <input class="form-control" type="number" :min="$props.track.velAmplitude || 0" :max="100 - ($props.track.velAmplitude || 0)" v-model="$props.track.velCenter" />
+          <input class="form-control" type="number" :min="track.velAmplitude || 0" :max="100 - (track.velAmplitude || 0)" v-model="track.velCenter" />
           </div>
         </div>
       </div>
