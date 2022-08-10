@@ -109,6 +109,10 @@ export default defineComponent({
             <button class="btn btn-outline-primary change-track-view" @click="cycleView">
               <i class="bi bi-eye-fill"></i>
             </button>
+            <button class="btn btn-outline-primary" @click="$props.track.addSingleShot">
+              <i class="bi bi-eye-fill" v-if="$props.track.singleShots === undefined"></i>
+              <span v-else>{{ $props.track.singleShots }}</span>
+            </button>
           </div>
         </div>
         <div class="col-4">
