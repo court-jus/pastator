@@ -8,7 +8,7 @@ import ConfirmButton from "./ConfirmButton.vue";
 import StepsSequencer from "./StepsSequencer.vue";
 import RythmPresetSelector from "./RythmPresetSelector.vue";
 import NotesPresetSelector from "./NotesPresetSelector.vue";
-import type { NotesPreset } from "@/model/presets";
+import Slider from "./Slider.vue";
 
 interface Props {
   track: TrackModel
@@ -222,6 +222,9 @@ export default defineComponent({
               <span class="input-group-text">Octaves</span>
               <NumberListInput v-model="$props.track.octaves" />
             </div>
+          </div>
+          <div class="col-2">
+            <Slider />
           </div>
         </div>
       </div>
