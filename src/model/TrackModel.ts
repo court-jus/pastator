@@ -43,6 +43,7 @@ export class TrackModel {
   presetId?: string;
   presetCategory?: string;
   melotor?: MelotorModel;
+  singleShots?: number;
 
   constructor(device: MIDIOutput) {
     this.device = device;
@@ -55,18 +56,21 @@ export class TrackModel {
     this.relatedTo = "chord";
     this.transpose = 0;
     this.baseVelocity = 100;
-    this.strumDelay = 150;
+    this.strumDelay = 0;
     this.rythmDefinition = [100];
     this.availableDegrees = [0, 1, 2];
     this.octaves = [0];
     this.currentNotes = [];
     this.playing = false;
     this.position = 0;
+    this.singleShots = 0;
   }
 
   // Load/Save/...
   load(trackData: SavedTrackModel) {
     Object.assign(this, trackData);
+    this.octaves = trackData.octaves || [0];
+    this.singleShots = trackData.singleShots || 0;
   }
   save() {
     // internalKeys: "device", "position", "playing", "currentNotes"
@@ -92,6 +96,10 @@ export class TrackModel {
     } else {
       this.play(songData);
     }
+  }
+  addSingleShot() {
+    this.singleShots =
+      this.singleShots === undefined ? 1 : this.singleShots + 1;
   }
 
   // MIDI
@@ -122,18 +130,21 @@ export class TrackModel {
     if (velocity > 0 && this.channel !== undefined) {
       let delay = 0;
       for (const note of playedNotes) {
-        window.setTimeout(() => {
-          if (!this.playing) return;
+        if (this.strumDelay > 0) {
+          window.setTimeout(() => {
+            if (!this.playing && this.singleShots === 0) return;
+            this.currentNotes.push(note + this.transpose);
+            playNote(this.device, this.channel, note + this.transpose, velocity);
+          }, delay);
+          delay += this.playMode === "strum" ? this.strumDelay : 0;
+        } else {
           this.currentNotes.push(note + this.transpose);
-          playNote(
-            this.device,
-            this.channel,
-            note + this.transpose,
-            velocity
-          );
-        }, delay);
-        delay += this.playMode === "strum" ? this.strumDelay : 0;
+          playNote(this.device, this.channel, note + this.transpose, velocity);
+        }
       }
+    }
+    if (this.singleShots !== undefined && this.singleShots > 0) {
+      this.singleShots -= 1;
     }
   }
   // NoteOff
@@ -161,10 +172,13 @@ export class TrackModel {
   tick(newClock: number, songData: SongData) {
     if (this.division === 0) return;
     this.position = Math.trunc(newClock / this.division);
-    if (!this.playing) return;
     if (newClock % this.division === 0) {
       if (this.gate === 100) this.stop();
-      this.emit(songData);
+      if (
+        this.playing ||
+        (this.singleShots !== undefined && this.singleShots > 0)
+      )
+        this.emit(songData);
     } else if (this.gate < 100) {
       const pcLow = ((newClock % this.division) / this.division) * 100;
       const pcHigh = (((newClock + 1) % this.division) / this.division) * 100;
@@ -258,7 +272,7 @@ export class TrackModel {
     this.relatedTo = newPreset.relatedTo;
   }
   currentChordChange(songData: SongData) {
-    if (!this.playing) return;
+    if (!this.playing && this.singleShots === 0) return;
     if (this.division === 0) {
       this.stop();
       this.emit(songData);
