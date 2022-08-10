@@ -35,7 +35,7 @@ export default defineComponent({
   data(): Data {
     return {
       tracks: [] as TrackModel[],
-      viewType: 'reduced',
+      viewType: 'expand',
       fileName: "",
       songData: {
         chordProgression: [1, 1, 4, 4, 6, 5],
@@ -288,9 +288,14 @@ export default defineComponent({
     if (localStorage.getItem("skipPerfTour") !== "true") {
       this.$tours["perfTour"].start();
     }
-    this.addTrack();
-    this.addTrack();
-    this.addTrack();
+    const newTrack = new TrackModel(this.$props.device);
+    newTrack.channel = 0;
+    newTrack.relatedTo = "invchord";
+    newTrack.playMode = "atonce";
+    newTrack.availableDegrees = [0, 2, 10];
+    newTrack.rythmDefinition = [100, 0, 100, 0, 100, 100, 100, 0];
+    newTrack.division = 24;
+    this.addTrack(newTrack);
   }
 });
 </script>
