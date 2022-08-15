@@ -168,12 +168,15 @@ export class TrackModel {
   }
   // CC
   receiveCC(cc: number, val: number) {
-    if (cc === 1) {
+    if (cc === 4) {
       this.gravityCenter = val;
-    } else if (cc === 2) {
-      this.gravityStrength = val;
-    } else if (cc === 4) {
-      this.baseVelocity = val;
+      if (!this.gravityStrength) this.gravityStrength = 12;
+    } else if (cc === 3) {
+      this.gravityStrength = Math.trunc((val / 127) * 27);
+    } else if (cc === 2 && this.rythmMode === "euclidean") {
+      this.rythmDensity = Math.trunc((val / 127) * 64);
+    } else if (cc === 1) {
+      this.proba = Math.trunc((val / 127) * 100);
     } else {
       console.log("I got CC", cc, val);
     }

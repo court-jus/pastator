@@ -174,19 +174,7 @@ export default defineComponent({
         oldDevice.onmidimessage = null;
         oldDevice.close();
       }
-      newDevice.onmidimessage = (message) => {
-        if (isMIDIMessageEvent(message)) {
-          const m = getMIDIMessage(message);
-          if (m.type === "Control Change") {
-            const [, cc, val] = Array.from(m.data);
-            for (let trackIndex = 0; trackIndex < this.tracks.length; trackIndex++) {
-              if (trackIndex === m.channel as number - 1) {
-                this.tracks[trackIndex].receiveCC(cc, val);
-              }
-            }
-          }
-        }
-      }
+      this.setupCCDevice(newDevice);
     }
   },
   methods: {
@@ -282,11 +270,30 @@ export default defineComponent({
         this.fileName.toLowerCase().endsWith(".json") ? this.fileName : this.fileName + ".json"
       ) : "pastasong.json";
       download(filename, json);
+    },
+    setupCCDevice(newDevice: MIDIInput) {
+      newDevice.onmidimessage = (message) => {
+        if (isMIDIMessageEvent(message)) {
+          const m = getMIDIMessage(message);
+          if (m.type === "Control Change") {
+            const [, cc, val] = Array.from(m.data);
+            console.log("CC", m.channel, cc, val);
+            for (let trackIndex = 0; trackIndex < this.tracks.length; trackIndex++) {
+              if (trackIndex === m.channel as number - 1) {
+                this.tracks[trackIndex].receiveCC(cc, val);
+              }
+            }
+          }
+        }
+      }
     }
   },
   mounted() {
     if (localStorage.getItem("skipPerfTour") !== "true") {
       this.$tours["perfTour"].start();
+    }
+    if (this.ccDevice) {
+      this.setupCCDevice(this.ccDevice);
     }
     /*
     const newTrack = new TrackModel(this.$props.device);
