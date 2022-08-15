@@ -46,6 +46,7 @@ export class TrackModel {
   melotor?: MelotorModel;
   singleShots?: number;
   debug?: boolean;
+  cachedAvailableNotes?: number[];
 
   constructor(device: MIDIOutput) {
     this.device = device;
@@ -78,6 +79,12 @@ export class TrackModel {
     // internalKeys: "device", "position", "playing", "currentNotes"
     const {device, position, playing, currentNotes, ...dataToSave} = this;
     return dataToSave;
+  }
+
+  // Utilities (caching...)
+  getAvailableNotes(songData: SongData) {
+    if(this.cachedAvailableNotes === undefined || this.cachedAvailableNotes.length === 0) return this.availableNotes(songData);
+    return this.cachedAvailableNotes;
   }
 
   // Transport
@@ -195,6 +202,11 @@ export class TrackModel {
 
   // Music
   availableNotes(songData: SongData) {
+    // Get and cache available notes
+    this.cachedAvailableNotes = this._availableNotes(songData);
+    return this.cachedAvailableNotes;
+  }
+  _availableNotes(songData: SongData) {
     if (this.melotor !== undefined) {
       this.recomputeMelotor();
     }
@@ -213,7 +225,7 @@ export class TrackModel {
     const [lowLimit, highLimit] = this.getNotesLimits();
     const [lowCandidate, highCandidate] = [Math.min(...candidateNotes), Math.max(...candidateNotes)];
     const candidatesCenter = Math.trunc((highCandidate - lowCandidate) / 2) + lowCandidate;
-    const shift = this.gravityCenter - candidatesCenter;
+    const shift = Math.trunc((this.gravityCenter - candidatesCenter) / 12) * 12;
     return candidateNotes
       .map((note: number) => note + shift)
       .map((note: number) => {
@@ -226,8 +238,7 @@ export class TrackModel {
           return note - transp - (12 - (transp % 12));
         }
         return note;
-      })
-      .sort();
+      });
   }
   getNotesLimits() {
     if (!this.gravityCenter || !this.gravityStrength) return [];
@@ -305,8 +316,8 @@ export class TrackModel {
         currentMelo: [],
         meloChangeDiv: BarLength / this.division,
         meloChangeStrength: 20,
-        meloLength: 8,
-        notesProbabilities: [100, 20, 60, 25, 40, 30, 50]
+        meloLength: 4,
+        notesProbabilities: [100, 16, 60, 15, 40, 20, 50]
       }
       this.melotor.currentMelo = computeMelotor(this.melotor, this.position);
     }
@@ -346,7 +357,9 @@ export type SavedTrackModel = Omit<TrackModel,
   "emit" |
   "receiveCC" |
   "tick" |
+  "getAvailableNotes" |
   "availableNotes" |
+  "_availableNotes" |
   "getNotesLimits" |
   "rythm" |
   "presetChange" |
@@ -356,5 +369,6 @@ export type SavedTrackModel = Omit<TrackModel,
   "applyNotesPreset" |
   "applyNotesMode" |
   "addSingleShot" |
-  "recomputeMelotor"
+  "recomputeMelotor" |
+  "cachedAvailableNotes"
 >;

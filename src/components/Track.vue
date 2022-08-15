@@ -52,7 +52,7 @@ export default defineComponent({
   },
   computed: {
     availableNotes: function () {
-      return this.$props.track.availableNotes(this.songData);
+      return this.$props.track.getAvailableNotes(this.songData);
     },
     rythmDefinitionComputed: {
       get() {
@@ -137,7 +137,7 @@ export default defineComponent({
     </div>
     <div class="col-12" v-if="computedView === 'expand'">
       <div class="row">
-        <div class="col-6">
+        <div :class="track.notesMode === 'melotor' ? 'col-9' : 'col-6'">
           <div class="edit-track-notes input-group">
             <select class="input-group-text form-select" v-model="track.notesMode" @change="(ev: Event) => track.applyNotesMode((ev.target as HTMLSelectElement).value as NotesMode)">
               <option value="manual">Manual</option>
@@ -149,12 +149,12 @@ export default defineComponent({
             <NumberListInput v-if="track.notesMode === 'manual'" v-model="track.availableDegrees" />
             <NumberListInput v-if="track.notesMode === 'melotor' && track.melotor" v-model="track.melotor.currentMelo" />
             <NotesPresetSelector v-if="track.notesMode === 'preset'" @preset-change="(presetId: string) => { track.applyNotesPreset(presetId); }" />
-            <span v-if="track.notesMode !== 'melotor'" class="input-group-text">{{ notesIndicator }}</span>
+            <span class="input-group-text">{{ notesIndicator }}</span>
           </div>
         </div>
-        <div class="col-6">
+        <div class="col-3" v-if="track.notesMode !== 'melotor'">
           <div class="input-group" role="group">
-            <select v-if="track.notesMode !== 'melotor'" class="form-select choose-track-play-mode" v-model="track.playMode">
+            <select class="form-select choose-track-play-mode" v-model="track.playMode">
               <option value="nil">----</option>
               <option value="up">Up</option>
               <option value="dn">Down</option>
@@ -163,13 +163,17 @@ export default defineComponent({
               <option value="atonce">Chord</option>
               <option value="strum">Strum</option>
             </select>
-            <select v-if="track.notesMode !== 'melotor'" class="form-select choose-track-related-to" v-model="track.relatedTo">
+            <select class="form-select choose-track-related-to" v-model="track.relatedTo">
               <option value="nil">----</option>
               <option value="scale">Scale</option>
               <option value="chord">Chord</option>
               <option value="invchord">Chord (Inv.)</option>
               <option value="static">Static</option>
             </select>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="input-group" role="group">
             <span class="input-group-text">Gravity</span>
             <input class="form-control choose-track-gravity-center" type="number" min="0" max="127" v-model="track.gravityCenter" />
             <input class="form-control choose-track-gravity-strength" type="number" min="0" max="27" v-model="track.gravityStrength" />
@@ -180,7 +184,7 @@ export default defineComponent({
     <div class="col-12" v-if="computedView !== 'reduced' && track.notesMode === 'melotor' && track.melotor?.notesProbabilities !== undefined">
       <div class="row mt-1 mb-1">
         <div class="col-1" v-for="(noteProba, idx) of track.melotor.notesProbabilities">
-          <Slider :model-value="noteProba" @update:model-value="(newVal) => { if(track.melotor) { track.melotor.notesProbabilities[idx] = newVal; track.recomputeMelotor(true); } }"/>
+          <Slider :model-value="noteProba" @update:model-value="(newVal) => { if(track.melotor) { track.melotor.notesProbabilities[idx] = newVal;  } }"/>
         </div>
       </div>
     </div>
