@@ -109,22 +109,49 @@ export const stopNote = (port: MIDIOutput, channel: number, note: number) => {
   if (note > -1 && note < 128) port.send([0x80 | (0 << 4) | channel, note, 64]);
 };
 
-export const noteNumberToName = (note: number, showOctave = true): string => {
+const noteNames = [
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
+];
+const letters = "ABCDEFG";
+const majorIntervals = scales["major"];
+
+const noteNamesInScale = (songData: SongData): string[] => {
+  // Work In Progress
+  const result: string[] = [];
+  console.log(songData.rootNote, songData.scale, scales[songData.scale]);
+  const rootNoteName = noteNames[songData.rootNote % 12];
+  const rootNoteBaseName = rootNoteName.slice(0, 1);
+  const rootNoteLetterIndex = letters.indexOf(rootNoteBaseName);
+  const isRootAltered = rootNoteName.length > 1;
+  console.log("rNN", rootNoteName, rootNoteBaseName, isRootAltered);
+  for (let degree = 0; degree < 7; degree++) {
+    const currentDegree = scales[songData.scale][degree];
+    const currentLetter = letters[(rootNoteLetterIndex + degree) % letters.length];
+    const majorInterval = majorIntervals[degree];
+    if (currentDegree === majorInterval) {
+      result.push(currentLetter + (isRootAltered ? "#" : ""));
+    } else if (currentDegree === majorInterval + 1) {
+
+    }
+    console.log(currentLetter, degree, currentDegree, majorInterval);
+  }
+  return result;
+};
+
+export const noteNumberToName = (note: number, songData: SongData, showOctave = true): string => {
   // C4 = 60
-  const noteName = [
-    "C",
-    "C#",
-    "D",
-    "D#",
-    "E",
-    "F",
-    "F#",
-    "G",
-    "G#",
-    "A",
-    "A#",
-    "B",
-  ][note % 12];
+  const noteName = noteNames[note % 12];
   const octave = Math.trunc(note / 12) - 1;
   return (
     /* note.toString() + ":" + */ noteName +

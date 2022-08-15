@@ -342,8 +342,8 @@ export default defineComponent({
               <option>major</option>
               <option>minor</option>
             </select>
-            <span class="input-group-text">{{ scales[songData.scale].map((val: number) => noteNumberToName(val,
-                false)).join(" ")
+            <span class="input-group-text">{{ scales[songData.scale].map((val: number) => noteNumberToName(val + songData.rootNote,
+                songData, false)).join(" ")
             }}</span>
           </div>
         </div>

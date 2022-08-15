@@ -2,6 +2,7 @@
 import NumberListInput from "./NumberListInput.vue";
 import type { Preset, SongData } from "@/model/types";
 import { noteNumberToName } from "@/model/engine";
+import { scales } from "@/model/presets";
 import type { TrackModel, RythmMode, NotesMode } from "@/model/TrackModel";
 import PresetSelect from "./PresetSelect.vue";
 import ConfirmButton from "./ConfirmButton.vue";
@@ -66,8 +67,8 @@ export default defineComponent({
       return this.localViewType ? this.localViewType : this.$props.viewType;
     },
     notesIndicator: function() {
-      const availableNotesNames = [...new Set(this.availableNotes)].map((val: number) => noteNumberToName(val));
-      const [lowLimit, highLimit] = this.$props.track.getNotesLimits().map((val: number) => noteNumberToName(val));
+      const availableNotesNames = [...new Set(this.availableNotes)].map((val: number) => noteNumberToName(val, this.songData));
+      const [lowLimit, highLimit] = this.$props.track.getNotesLimits().map((val: number) => noteNumberToName(val, this.songData));
       const notes = [];
       if (lowLimit) notes.push(lowLimit, "|");
       notes.push(...availableNotesNames);
@@ -183,8 +184,9 @@ export default defineComponent({
     </div>
     <div class="col-12" v-if="computedView !== 'reduced' && track.notesMode === 'melotor' && track.melotor?.notesProbabilities !== undefined">
       <div class="row mt-1 mb-1">
-        <div class="col-1" v-for="(noteProba, idx) of track.melotor.notesProbabilities">
+        <div class="col-1 text-center" v-for="(noteProba, idx) of track.melotor.notesProbabilities">
           <Slider :model-value="noteProba" @update:model-value="(newVal) => { if(track.melotor) { track.melotor.notesProbabilities[idx] = newVal;  } }"/>
+          {{ noteNumberToName(scales[songData.scale][idx] + songData.rootNote, songData, false) }}
         </div>
       </div>
     </div>
