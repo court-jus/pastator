@@ -1,5 +1,5 @@
 import { scales, chords } from "./presets";
-import type { SongData } from "@/model/types";
+import type { EuclideanMode, SongData } from "@/model/types";
 import type { MelotorModel } from "./TrackModel";
 
 export const getNotes = (
@@ -94,6 +94,34 @@ export const computeMelotor = (
   }
   return melo;
 };
+
+export const computeEuclidean = (x: number, y: number | null, density: number, gridSize: number, mode: EuclideanMode): number | null => {
+  if (density === 0) return null;
+  const newY = y === null ? null : (gridSize - y);
+  const newX = x % gridSize;
+  const xprev = (newX - 1) % gridSize;
+  const new_value = computeEuclideanValue(newX, density, gridSize, mode);
+  if (newY !== null && new_value !== newY) return null;
+  const prev_value = computeEuclideanValue(xprev, density, gridSize, mode);
+  if (prev_value !== new_value) return 0;
+  return 1;
+};
+
+export const computeEuclideanValue = (x: number, density: number, gridSize: number, mode: EuclideanMode): number => {
+  if (mode === "sinus") {
+    // x is between 0 and gridSize
+    // newX is between 0 and 2*PI and relates to density
+    const newX = (x / gridSize * Math.PI * 2) * (64 - density) / 32;
+    return Math.floor(((Math.cos(newX) + 1) * gridSize / 8) + gridSize / 6);
+  } else if (mode === "exp") {
+    const slope = 1;
+    const newX = (x+1) / density * 4.16 / 6;
+    const y = Math.floor(Math.exp(newX) * slope);
+    return y;
+  }
+  // Default: linear
+  return Math.floor(((x+1) * (64 - density)) / gridSize) + 1;
+}
 
 export const playNote = (
   port: MIDIOutput,

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import NumberListInput from "./NumberListInput.vue";
-import type { Preset, SongData } from "@/model/types";
+import type { EuclideanMode, Preset, SongData } from "@/model/types";
 import { noteNumberToName } from "@/model/engine";
 import { scales } from "@/model/presets";
 import type { TrackModel, RythmMode, NotesMode } from "@/model/TrackModel";
 import PresetSelect from "./PresetSelect.vue";
 import ConfirmButton from "./ConfirmButton.vue";
+import EuclideanView from "./EuclideanView.vue";
 import StepsSequencer from "./StepsSequencer.vue";
 import RythmPresetSelector from "./RythmPresetSelector.vue";
 import NotesPresetSelector from "./NotesPresetSelector.vue";
@@ -22,7 +23,6 @@ interface Props {
 }
 
 interface Data {
-  lastNotes: number[]
   preset?: Preset
   localViewType: string
 }
@@ -36,7 +36,6 @@ import { presets } from "@/model/presets";
 export default defineComponent({
   data(): Data {
     return {
-      lastNotes: [],
       localViewType: ""
     }
   },
@@ -202,18 +201,41 @@ export default defineComponent({
             </select>
             <NumberListInput class="w-50" v-if="track.rythmMode === 'manual'" v-model="track.rythmDefinition" />
             <RythmPresetSelector v-if="track.rythmMode === 'preset'" @preset-change="(val) => { track.applyRythmPreset(val); }" />
+            <select v-if="track.rythmMode === 'euclidean'"
+                    class="form-select"
+                    :value="track.euclideanMode"
+                    @change="(ev) => {
+                      track.setEuclideanSettings({mode: ((ev.target as HTMLSelectElement).value as EuclideanMode)});
+                    }">
+              <option value="linear">Lin.</option>
+              <option value="sinus">Sin.</option>
+              <option value="exp">Exp.</option>
+            </select>
             <span class="input-group-text">Div.</span>
             <input class="form-control choose-track-division" type="number" min="0" v-model="track.division" />
           </div>
         </div>
       </div>
       <div class="col-12" v-if="computedView === 'expand'">
-        <StepsSequencer v-model="track.rythmDefinition" />
+        <StepsSequencer v-model="track.rythmDefinition" :position="track.position" />
+      </div>
+      <div class="col-12" v-if="track.rythmMode === 'euclidean' && track.rythmDensity !== undefined">
+        <EuclideanView :density="track.rythmDensity" :mode="track.euclideanMode || 'linear'" />
       </div>
       <div class="col-12" v-if="computedView === 'expand'">
         <div class="input-group input-group">
           <span class="input-group-text" v-if="track.rythmMode === 'euclidean'">Density</span>
-          <input class="form-control" v-if="track.rythmMode === 'euclidean'" type="number" min="0" max="64" v-model="track.rythmDensity" />
+          <input class="form-control"
+                 v-if="track.rythmMode === 'euclidean'"
+                 type="number"
+                 min="0"
+                 max="64"
+                 :value="track.rythmDensity"
+                 @change="(ev) => {
+                  if (!ev.target) return;
+                  track.setEuclideanSettings({density: parseInt((ev.target as HTMLInputElement).value, 10)});
+                 }"
+                 />
           <span class="input-group-text">Proba.</span>
           <input class="form-control" type="number" min="0" max="100" v-model="track.proba" />
           <span class="input-group-text">V.Ampl.</span>

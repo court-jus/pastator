@@ -1,5 +1,5 @@
-import type { DegreesRelation, Preset, SongData } from "./types";
-import { computeMelotor, getNotes, playNote, stopNote } from "./engine";
+import type { DegreesRelation, EuclideanMode, Preset, SongData } from "./types";
+import { computeEuclidean, computeMelotor, getNotes, playNote, stopNote } from "./engine";
 import { BarLength, rythmPresets, notesPresets } from "./presets";
 
 export type MelotorModel = {
@@ -33,13 +33,11 @@ export class TrackModel {
   relatedTo: DegreesRelation;
   gravityCenter?: number;
   gravityStrength?: number;
+  euclideanMode?: EuclideanMode;
   rythmDensity?: number;
   velAmplitude?: number;
   velCenter?: number;
   proba?: number;
-  timeout?: number;
-  lastNotes?: number[];
-  maxNotes?: number;
   preset?: Preset;
   presetId?: string;
   presetCategory?: string;
@@ -47,6 +45,7 @@ export class TrackModel {
   singleShots?: number;
   debug?: boolean;
   cachedAvailableNotes?: number[];
+  timeouts: number[];
 
   constructor(device: MIDIOutput) {
     this.device = device;
@@ -67,6 +66,7 @@ export class TrackModel {
     this.playing = false;
     this.position = 0;
     this.singleShots = 0;
+    this.timeouts = [];
   }
 
   // Load/Save/...
@@ -81,10 +81,15 @@ export class TrackModel {
     return dataToSave;
   }
 
-  // Utilities (caching...)
+  // Utilities (caching, setters...)
   getAvailableNotes(songData: SongData) {
     if(this.cachedAvailableNotes === undefined || this.cachedAvailableNotes.length === 0) return this.availableNotes(songData);
     return this.cachedAvailableNotes;
+  }
+  setEuclideanSettings({density, mode}: {density?: number, mode?: EuclideanMode}) {
+    if (density !== undefined) this.rythmDensity = density;
+    if (mode !== undefined) this.euclideanMode = mode;
+    this.rythm();
   }
 
   // Transport
@@ -141,11 +146,11 @@ export class TrackModel {
       let delay = 0;
       for (const note of playedNotes) {
         if (this.strumDelay > 0) {
-          window.setTimeout(() => {
+          this.timeouts.push(window.setTimeout(() => {
             if (!this.playing && this.singleShots === 0) return;
             this.currentNotes.push(note + this.transpose);
             playNote(this.device, this.channel, note + this.transpose, velocity);
-          }, delay);
+          }, delay));
           delay += this.playMode === "strum" ? this.strumDelay : 0;
         } else {
           this.currentNotes.push(note + this.transpose);
@@ -163,6 +168,9 @@ export class TrackModel {
     if (this.channel === undefined) return;
     for (const currentNote of this.currentNotes) {
       stopNote(this.device, this.channel, currentNote);
+    }
+    for (const timeout of this.timeouts) {
+      window.clearTimeout(timeout);
     }
     this.currentNotes = [];
   }
@@ -210,7 +218,7 @@ export class TrackModel {
     return this.cachedAvailableNotes;
   }
   _availableNotes(songData: SongData) {
-    if (this.melotor !== undefined) {
+    if (this.melotor !== undefined && this.notesMode === "melotor") {
       this.recomputeMelotor();
     }
     const candidateNotes = getNotes(
@@ -251,15 +259,13 @@ export class TrackModel {
     return [lowLimit, highLimit];
   }
   rythm() {
-    if (this.rythmDensity && this.rythmMode === 'euclidean') {
+    if (this.rythmDensity !== undefined && this.rythmMode === 'euclidean') {
       // Euclidean Rythm
       this.rythmDefinition = [];
       for (let p = 0; p < 64; p++) {
         const x = p % 64;
-        const xprev = (x - 1) % 64;
-        const prev_value = Math.floor((xprev * this.rythmDensity) / 64);
-        const new_value = Math.floor((x * this.rythmDensity) / 64);
-        this.rythmDefinition.push(prev_value !== new_value ? 100 : 0);
+        const euclidean = computeEuclidean(x, null, this.rythmDensity, 64, this.euclideanMode || "linear");
+        this.rythmDefinition.push(euclidean === 1 ? 100 : 0);
       }
     }
     this.rythmDefinition = this.rythmDefinition.map((value: number) => {
@@ -304,11 +310,10 @@ export class TrackModel {
         this.rythmDefinition.push(...(new Array(16 - this.rythmDefinition.length).fill(0)));
       }
     } else if (this.rythmMode === 'euclidean') {
-      // const refDivision = this.division === 0 ? BarLength : this.division;
+      this.euclideanMode = "linear";
       const activeBeats = this.rythmDefinition.filter((beat: number) => beat > 0).length;
       const newDensity = 64 / this.rythmDefinition.length * activeBeats;
-      this.rythmDensity = newDensity;
-      this.rythm();
+      this.setEuclideanSettings({density: newDensity});
     }
   }
   applyNotesMode(notesMode : NotesMode) {
@@ -346,32 +351,29 @@ export class TrackModel {
 }
 
 
-export type SavedTrackModel = Omit<TrackModel,
-  "device" |
-  "position" |
-  "playing" |
-  "load" |
-  "save" |
-  "currentNotes" |
-  "play" |
-  "fullStop" |
-  "playpause" |
-  "stop" |
-  "emit" |
-  "receiveCC" |
-  "tick" |
-  "getAvailableNotes" |
-  "availableNotes" |
-  "_availableNotes" |
-  "getNotesLimits" |
-  "rythm" |
-  "presetChange" |
-  "currentChordChange" |
-  "applyRythmPreset" |
-  "applyRythmMode" |
-  "applyNotesPreset" |
-  "applyNotesMode" |
-  "addSingleShot" |
-  "recomputeMelotor" |
-  "cachedAvailableNotes"
+export type SavedTrackModel = Pick<TrackModel,
+  "channel" |
+  "division" |
+  "gate" |
+  "transpose" |
+  "baseVelocity" |
+  "strumDelay" |
+  "rythmDefinition" |
+  "availableDegrees" |
+  "octaves" |
+  "notesMode" |
+  "rythmMode" |
+  "playMode" |
+  "relatedTo" |
+  "gravityCenter" |
+  "gravityStrength" |
+  "rythmDensity" |
+  "velAmplitude" |
+  "velCenter" |
+  "proba" |
+  "preset" |
+  "presetId" |
+  "presetCategory" |
+  "melotor" |
+  "singleShots"
 >;
