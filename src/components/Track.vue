@@ -175,8 +175,8 @@ export default defineComponent({
         <div class="col-3">
           <div class="input-group" role="group">
             <span class="input-group-text">Gravity</span>
-            <input class="form-control choose-track-gravity-center" type="number" min="0" max="127" v-model="track.gravityCenter" />
-            <input class="form-control choose-track-gravity-strength" type="number" min="0" max="27" v-model="track.gravityStrength" />
+            <input class="form-control choose-track-gravity-center" type="number" min="1" max="127" v-model="track.gravityCenter" />
+            <input class="form-control choose-track-gravity-strength" type="number" min="1" max="27" v-model="track.gravityStrength" />
           </div>
         </div>
       </div>
@@ -209,7 +209,8 @@ export default defineComponent({
                     }">
               <option value="linear">Lin.</option>
               <option value="sinus">Sin.</option>
-              <option value="exp">Exp.</option>
+              <option value="dexp">Exp. D</option>
+              <option value="uexp">Exp. U</option>
             </select>
             <span class="input-group-text">Div.</span>
             <input class="form-control choose-track-division" type="number" min="0" v-model="track.division" />
@@ -272,8 +273,8 @@ export default defineComponent({
         <div class="col-3">
           <div class="input-group" role="group">
             <span class="input-group-text">Gravity</span>
-            <input class="form-control choose-track-gravity-center" type="number" min="0" max="127" v-model="track.gravityCenter" />
-            <input class="form-control choose-track-gravity-strength" type="number" min="0" max="27" v-model="track.gravityStrength" />
+            <input class="form-control choose-track-gravity-center" type="number" min="1" max="127" v-model="track.gravityCenter" />
+            <input class="form-control choose-track-gravity-strength" type="number" min="1" max="27" v-model="track.gravityStrength" />
           </div>
         </div>
         <div class="col-9">

@@ -113,9 +113,14 @@ export const computeEuclideanValue = (x: number, density: number, gridSize: numb
     // newX is between 0 and 2*PI and relates to density
     const newX = (x / gridSize * Math.PI * 2) * (64 - density) / 32;
     return Math.floor(((Math.cos(newX) + 1) * gridSize / 8) + gridSize / 6);
-  } else if (mode === "exp") {
+  } else if (mode === "dexp") {
     const slope = 1;
     const newX = (x+1) / density * 4.16 / 6;
+    const y = Math.floor(Math.exp(newX) * slope);
+    return y;
+  } else if (mode === "uexp") {
+    const slope = 1;
+    const newX = (64-x+1) / density * 4.16 / 6;
     const y = Math.floor(Math.exp(newX) * slope);
     return y;
   }
@@ -162,7 +167,6 @@ const noteNamesInScale = (songData: SongData): string[] => {
   const rootNoteBaseName = rootNoteName.slice(0, 1);
   const rootNoteLetterIndex = letters.indexOf(rootNoteBaseName);
   const isRootAltered = rootNoteName.length > 1;
-  console.log("rNN", rootNoteName, rootNoteBaseName, isRootAltered);
   for (let degree = 0; degree < 7; degree++) {
     const currentDegree = scales[songData.scale][degree];
     const currentLetter = letters[(rootNoteLetterIndex + degree) % letters.length];

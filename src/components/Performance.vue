@@ -277,7 +277,6 @@ export default defineComponent({
           const m = getMIDIMessage(message);
           if (m.type === "Control Change") {
             const [, cc, val] = Array.from(m.data);
-            console.log("CC", m.channel, cc, val);
             for (let trackIndex = 0; trackIndex < this.tracks.length; trackIndex++) {
               if (trackIndex === m.channel as number - 1) {
                 this.tracks[trackIndex].receiveCC(cc, val);

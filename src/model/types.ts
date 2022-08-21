@@ -27,4 +27,4 @@ export type PresetCategories = Record<string, Preset[]>;
 
 export type DegreesRelation = "chord" | "scale" | "invchord" | "static";
 
-export type EuclideanMode = "linear" | "sinus" | "exp";
+export type EuclideanMode = "linear" | "sinus" | "dexp" | "uexp";

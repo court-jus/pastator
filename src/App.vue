@@ -131,6 +131,16 @@ export default {
         this.midiNotesDevice = newDevice as MIDIInput;
       }
       localStorage.setItem(label, newDevice.id);
+    },
+    onClearSavedMIDIDevices() {
+      localStorage.removeItem("midiclock");
+      localStorage.removeItem("midioutput");
+      localStorage.removeItem("midicc");
+      localStorage.removeItem("midinotes");
+      this.midiClockDevice = undefined;
+      this.midiOutputDevice = undefined;
+      this.midiCCDevice = undefined;
+      this.midiNotesDevice = undefined;
     }
   }
 }
@@ -178,6 +188,11 @@ export default {
         <div class="row" id="midi-notes-in" v-if="midiOutputDevice && midiClockDevice">
           <SelectMidiInput :label="'Midi Notes'" :modelValue="midiNotesDevice" @update:modelValue="newValue => midiDeviceSelected(newValue, 'midinotes')"
             :midi="midiSystem" />
+        </div>
+        <div class="row">
+          <button class="btn btn-primary btn-warning" @click="onClearSavedMIDIDevices">
+            Clear saved MIDI devices
+          </button>
         </div>
       </div>
     </div>

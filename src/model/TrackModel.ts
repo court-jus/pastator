@@ -31,8 +31,8 @@ export class TrackModel {
   rythmMode: RythmMode;
   playMode: "up" | "dn" | "updn" | "random" | "atonce" | "strum";
   relatedTo: DegreesRelation;
-  gravityCenter?: number;
-  gravityStrength?: number;
+  gravityCenter: number;
+  gravityStrength: number;
   euclideanMode?: EuclideanMode;
   rythmDensity?: number;
   velAmplitude?: number;
@@ -67,6 +67,8 @@ export class TrackModel {
     this.position = 0;
     this.singleShots = 0;
     this.timeouts = [];
+    this.gravityCenter = 64;
+    this.gravityStrength = 1;
   }
 
   // Load/Save/...
@@ -227,18 +229,13 @@ export class TrackModel {
       this.octaves,
       this.relatedTo
     );
-    if (
-      !this.gravityCenter ||
-      !this.gravityStrength
-    ) {
-      return candidateNotes;
-    }
+    if (this.relatedTo === "static") return candidateNotes;
     const [lowLimit, highLimit] = this.getNotesLimits();
     const [lowCandidate, highCandidate] = [Math.min(...candidateNotes), Math.max(...candidateNotes)];
     const candidatesCenter = Math.trunc((highCandidate - lowCandidate) / 2) + lowCandidate;
     const shift = Math.trunc((this.gravityCenter - candidatesCenter) / 12) * 12;
-    return candidateNotes
-      .map((note: number) => note + shift)
+    const shifted = (this.relatedTo === "chord") ? candidateNotes.map((note: number) => note + shift) : candidateNotes;
+    return shifted
       .map((note: number) => {
         if (note < lowLimit) {
           const transp = lowLimit - note;
@@ -252,7 +249,6 @@ export class TrackModel {
       });
   }
   getNotesLimits() {
-    if (!this.gravityCenter || !this.gravityStrength) return [];
     const margin = Math.trunc((40 - this.gravityStrength) / 2);
     const lowLimit = Math.max(this.gravityCenter - margin, 0);
     const highLimit = Math.min(this.gravityCenter + margin, 127);
@@ -318,16 +314,20 @@ export class TrackModel {
   }
   applyNotesMode(notesMode : NotesMode) {
     this.notesMode = notesMode;
-    if (this.notesMode === 'melotor' && this.melotor === undefined) {
+    if (this.notesMode === 'melotor') {
       this.playMode = "up";
-      this.melotor = {
-        currentMelo: [],
-        meloChangeDiv: BarLength / this.division,
-        meloChangeStrength: 20,
-        meloLength: 4,
-        notesProbabilities: [100, 16, 60, 15, 40, 20, 50]
+      this.relatedTo = "scale";
+      if (this.melotor === undefined) {
+        this.melotor = {
+          currentMelo: [],
+          meloChangeDiv: BarLength / this.division,
+          meloChangeStrength: 20,
+          meloLength: 4,
+          notesProbabilities: [100, 16, 60, 15, 40, 20, 50]
+        }
       }
       this.melotor.currentMelo = computeMelotor(this.melotor, this.position);
+      this.cachedAvailableNotes = undefined;
     }
   }
   applyRythmPreset(rythmId: string) {
