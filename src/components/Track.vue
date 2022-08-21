@@ -10,6 +10,8 @@ import EuclideanView from "./EuclideanView.vue";
 import StepsSequencer from "./StepsSequencer.vue";
 import RythmPresetSelector from "./RythmPresetSelector.vue";
 import NotesPresetSelector from "./NotesPresetSelector.vue";
+import ChannelSelector from "./ChannelSelector.vue";
+import StrumSelector from "./StrumSelector.vue";
 import Slider from "./Slider.vue";
 
 interface Props {
@@ -122,7 +124,7 @@ export default defineComponent({
         <div class="col-4">
           <div class="input-group" role="group">
             <span class="input-group-text">Channel</span>
-            <input class="form-control form-control-sm choose-track-channel" type="number" min="0" max="15" v-model="track.channel" title="MIDI Channel driven by this track"/>
+            <ChannelSelector :selected-channel="track.channel" @channel-change="(ch) => track.channel = ch" />
             <span class="input-group-text">Vol.</span>
             <input class="form-control choose-track-base-velocity" type="number" min="0" max="100" v-model="track.baseVelocity" />
           </div>
@@ -250,7 +252,7 @@ export default defineComponent({
           <div class="col-2">
             <div class="input-group" role="group">
               <span class="input-group-text">Strum</span>
-              <input class="form-control" type="number" min="0" v-model="track.strumDelay" />
+              <StrumSelector :selected="track.strumDelay" @change="(val) => track.strumDelay = val" />
             </div>
           </div>
           <div class="col-2">

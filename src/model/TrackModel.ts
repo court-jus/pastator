@@ -77,7 +77,7 @@ export class TrackModel {
     this.octaves = trackData.octaves || [0];
     this.singleShots = trackData.singleShots || 0;
   }
-  save() {
+  save(): SavedTrackModel {
     // internalKeys: "device", "position", "playing", "currentNotes"
     const {device, position, playing, currentNotes, ...dataToSave} = this;
     return dataToSave;
