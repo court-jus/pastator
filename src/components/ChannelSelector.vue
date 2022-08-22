@@ -26,7 +26,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <select class="form-select" @change="handleChange">
+  <select class="form-select" @change="handleChange" :value="channel">
     <option v-for="(_, channel) in new Array(16).fill(0)" :value="channel">{{ channel }}</option>
   </select>
 </template>

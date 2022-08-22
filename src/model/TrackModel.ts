@@ -10,20 +10,21 @@ export type MelotorModel = {
   meloChangeStrength: number;
 };
 
-export type RythmMode = "manual" | "preset" | "16steps" | "euclidean";
+export type RythmMode = "manual" | "preset" | "16steps" | "euclidean" | "durations";
 export type NotesMode = "manual" | "preset" | "ponderated" | "melotor" | "random";
 
 export class TrackModel {
   device: MIDIOutput;
   channel: number;
   division: number;
-  currentNotes: number[];
+  currentNotes: Record<number, number>;
   gate: number;
   transpose: number;
   baseVelocity: number;
   strumDelay: number;
   rythmDefinition: number[];
   position: number;
+  rythmPosition: number;
   playing: boolean;
   availableDegrees: number[];
   octaves: number[];
@@ -53,18 +54,19 @@ export class TrackModel {
     this.division = BarLength;
     this.gate = 90;
     this.notesMode = "manual";
-    this.rythmMode = "preset";
+    this.rythmMode = "durations";
     this.playMode = "random";
     this.relatedTo = "chord";
     this.transpose = 0;
     this.baseVelocity = 100;
     this.strumDelay = 0;
-    this.rythmDefinition = [100];
+    this.rythmDefinition = new Array(4).fill(BarLength / 4);
     this.availableDegrees = [0, 1, 2];
     this.octaves = [0];
-    this.currentNotes = [];
+    this.currentNotes = {};
     this.playing = false;
     this.position = 0;
+    this.rythmPosition = 0;
     this.singleShots = 0;
     this.timeouts = [];
     this.gravityCenter = 64;
@@ -78,8 +80,8 @@ export class TrackModel {
     this.singleShots = trackData.singleShots || 0;
   }
   save(): SavedTrackModel {
-    // internalKeys: "device", "position", "playing", "currentNotes"
-    const {device, position, playing, currentNotes, ...dataToSave} = this;
+    // internalKeys: "device", "position", "playing", "currentNotes", ...
+    const {device, position, rythmPosition, playing, currentNotes, ...dataToSave} = this;
     return dataToSave;
   }
 
@@ -95,23 +97,31 @@ export class TrackModel {
   }
 
   // Transport
-  play(songData: SongData) {
+  play(songData: SongData, clock: number) {
     this.playing = true;
     if (this.division === 0) {
       // Run drones on play, without waiting for a clock
-      this.emit(songData);
+      this.emit(songData, clock);
     }
   }
   fullStop(panic = false) {
-    if (panic) this.stop();
+    if (panic) {
+      this.stop();
+    }
+    this.rew();
     this.playing = false;
   }
-  playpause(songData: SongData) {
+  playpause(songData: SongData, clock: number) {
     if (this.playing) {
-      this.fullStop(true);
+      this.stop();
+      this.playing = false;
     } else {
-      this.play(songData);
+      this.play(songData, clock);
     }
+  }
+  rew() {
+    this.position = 0;
+    this.rythmPosition = 0;
   }
   addSingleShot() {
     this.singleShots =
@@ -120,10 +130,12 @@ export class TrackModel {
 
   // MIDI
   // NoteOn
-  emit(songData: SongData) {
-    const availableNotes = this.availableNotes(songData);
+  emit(songData: SongData, clock: number) {
+    let availableNotes = this.availableNotes(songData);
+    if (this.debug) console.log("aN", [...availableNotes]);
     const reversed = [...availableNotes].reverse();
     const upDn = availableNotes.concat(reversed);
+    let duration = Math.trunc(this.division * this.gate / 100);
     const playedNotes =
       this.playMode === "atonce" || this.playMode === "strum"
         ? availableNotes
@@ -142,23 +154,35 @@ export class TrackModel {
         : this.playMode === "updn"
         ? [upDn[this.position % upDn.length]]
         : [availableNotes[0]];
+    if (this.rythmMode === "durations") {
+      const totalDuration = this.rythmDefinition.reduce((prev, curr) => prev + curr, 0);
+      const rythmPosition = ((this.rythmPosition * this.division) % totalDuration);
+      duration = this.rythmDefinition.reduce((prev: [number, number], curr: number) => {
+        const [chosen, total] = prev;
+        if (chosen) return prev;
+        if (total === rythmPosition) return [curr, 0] as [number, number];
+        return [0, total + curr] as [number, number];
+      }, [0, 0])[0];
+    }
+    this.rythmPosition += 1;
     const velocity = this.rythm();
-    if (velocity > 0 && this.channel !== undefined) {
+    if (velocity > 0 && this.channel !== undefined && duration > 0) {
       if (this.debug) console.log(this.channel, "emit", playedNotes, "at", this.position);
       let delay = 0;
       for (const note of playedNotes) {
         if (this.strumDelay > 0) {
           this.timeouts.push(window.setTimeout(() => {
             if (!this.playing && this.singleShots === 0) return;
-            this.currentNotes.push(note + this.transpose);
+            this.currentNotes[note + this.transpose] = clock + duration;
             playNote(this.device, this.channel, note + this.transpose, velocity);
           }, delay));
           delay += this.playMode === "strum" ? this.strumDelay : 0;
         } else {
-          this.currentNotes.push(note + this.transpose);
+          this.currentNotes[note + this.transpose] = clock + duration;
           playNote(this.device, this.channel, note + this.transpose, velocity);
         }
       }
+      this.position += 1;
     }
     if (this.singleShots !== undefined && this.singleShots > 0) {
       this.singleShots -= 1;
@@ -166,15 +190,16 @@ export class TrackModel {
   }
   // NoteOff
   stop() {
-    if (this.currentNotes.length === 0) return;
+    if (Object.keys(this.currentNotes).length === 0) return;
     if (this.channel === undefined) return;
-    for (const currentNote of this.currentNotes) {
+    for (const key of Object.keys(this.currentNotes)) {
+      const currentNote = parseInt(key, 10);
       stopNote(this.device, this.channel, currentNote);
     }
+    this.currentNotes = {};
     for (const timeout of this.timeouts) {
       window.clearTimeout(timeout);
     }
-    this.currentNotes = [];
   }
   // CC
   receiveCC(cc: number, val: number) {
@@ -194,21 +219,28 @@ export class TrackModel {
   // Clock
   tick(newClock: number, songData: SongData) {
     if (this.division === 0) return;
-    this.position = Math.trunc(newClock / this.division);
+    // this.position = Math.trunc(newClock / this.division);
+    if (Object.keys(this.currentNotes).length > 0 && this.channel !== undefined) {
+      const stopped = [];
+      for (const key of Object.keys(this.currentNotes)) {
+        const currentNote = parseInt(key, 10);
+        const timeToStop = this.currentNotes[currentNote];
+        if (newClock >= timeToStop) {
+          stopNote(this.device, this.channel, currentNote);
+          stopped.push(currentNote);
+        }
+      }
+      for (const note of stopped) {
+        delete this.currentNotes[note];
+      }
+    }
     if (newClock % this.division === 0) {
-      if (this.gate === 100) this.stop();
       if (
         this.playing ||
         (this.singleShots !== undefined && this.singleShots > 0)
       ) {
         if (this.debug) console.log(this.channel, "advance at", newClock, "pos", this.position);
-        this.emit(songData);
-      }
-    } else if (this.gate < 100) {
-      const pcLow = ((newClock % this.division) / this.division) * 100;
-      const pcHigh = (((newClock + 1) % this.division) / this.division) * 100;
-      if (pcHigh < pcLow || (pcLow < this.gate && pcHigh >= this.gate)) {
-        this.stop();
+        this.emit(songData, newClock);
       }
     }
   }
@@ -264,6 +296,18 @@ export class TrackModel {
         this.rythmDefinition.push(euclidean === 1 ? 100 : 0);
       }
     }
+    if (this.rythmMode === "durations") {
+      let velocity = 100;
+      if (this.velAmplitude !== undefined) {
+        const center = this.velCenter !== undefined ? this.velCenter : 50;
+        velocity = Math.floor(
+          Math.random() * this.velAmplitude - this.velAmplitude / 2 + center
+        );
+      }
+      const playProbability = (this.proba !== undefined ? this.proba : velocity) / 100;
+      if (Math.random() >= playProbability) return 0;
+      return (velocity * this.baseVelocity) / 100;
+    }
     this.rythmDefinition = this.rythmDefinition.map((value: number) => {
       if (this.velAmplitude === undefined || value === 0) return value;
       const center = this.velCenter !== undefined ? this.velCenter : 50;
@@ -272,7 +316,7 @@ export class TrackModel {
       );
     });
     const chosenVelocity =
-      this.rythmDefinition[this.position % this.rythmDefinition.length];
+      this.rythmDefinition[this.rythmPosition % this.rythmDefinition.length];
     const restThreshold = 100;
     if (chosenVelocity >= restThreshold) {
       return (chosenVelocity * this.baseVelocity) / 100;
@@ -291,11 +335,11 @@ export class TrackModel {
     this.playMode = newPreset.playMode;
     this.relatedTo = newPreset.relatedTo;
   }
-  currentChordChange(songData: SongData) {
+  currentChordChange(songData: SongData, clock: number) {
     if (!this.playing && this.singleShots === 0) return;
     if (this.division === 0) {
       this.stop();
-      this.emit(songData);
+      this.emit(songData, clock);
     }
   }
   applyRythmMode(rythmMode: RythmMode) {

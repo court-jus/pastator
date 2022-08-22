@@ -56,14 +56,6 @@ export default defineComponent({
     availableNotes: function () {
       return this.$props.track.getAvailableNotes(this.songData);
     },
-    rythmDefinitionComputed: {
-      get() {
-        return this.$props.track.rythmDefinition.join(" ");
-      },
-      set(newValue: string) {
-        this.$props.track.rythmDefinition = newValue.split(" ").map((val: string) => parseInt(val, 10));
-      }
-    },
     computedView: function() {
       return this.localViewType ? this.localViewType : this.$props.viewType;
     },
@@ -88,10 +80,10 @@ export default defineComponent({
       this.$props.track.stop();
     },
     'songData.currentChord'() {
-      this.$props.track.currentChordChange(this.$props.songData);
+      this.$props.track.currentChordChange(this.$props.songData, this.$props.clock);
     },
     'songData.currentChordType'() {
-      this.$props.track.currentChordChange(this.$props.songData);
+      this.$props.track.currentChordChange(this.$props.songData, this.$props.clock);
     }
   },
   beforeUnmount() {
@@ -106,7 +98,7 @@ export default defineComponent({
       <div class="row">
         <div class="col-2">
           <div class="btn-group" role="group">
-            <button @click="() => track.playpause($props.songData)" class="btn btn-outline-primary playpause-track" title="Play/Pause track">
+            <button @click="() => track.playpause($props.songData, $props.clock)" class="btn btn-outline-primary playpause-track" title="Play/Pause track">
               <i :class="'bi bi-' + (track.playing ? 'pause' : 'play') + '-fill'"></i>
             </button>
             <ConfirmButton label="Remove track" @confirmed="removeTrack">
@@ -200,8 +192,9 @@ export default defineComponent({
               <option value="preset">Preset</option>
               <option value="16steps">16 steps</option>
               <option value="euclidean">Euclidean</option>
+              <option value="durations">Durations</option>
             </select>
-            <NumberListInput class="w-50" v-if="track.rythmMode === 'manual'" v-model="track.rythmDefinition" />
+            <NumberListInput class="w-50" v-if="track.rythmMode === 'manual' || track.rythmMode === 'durations'" v-model="track.rythmDefinition" />
             <RythmPresetSelector v-if="track.rythmMode === 'preset'" @preset-change="(val) => { track.applyRythmPreset(val); }" />
             <select v-if="track.rythmMode === 'euclidean'"
                     class="form-select"
@@ -220,7 +213,7 @@ export default defineComponent({
         </div>
       </div>
       <div class="col-12" v-if="computedView === 'expand'">
-        <StepsSequencer v-model="track.rythmDefinition" :position="track.position" />
+        <StepsSequencer v-if="track.rythmMode !== 'durations'" v-model="track.rythmDefinition" :position="track.rythmPosition" />
       </div>
       <div class="col-12" v-if="track.rythmMode === 'euclidean' && track.rythmDensity !== undefined">
         <EuclideanView :density="track.rythmDensity" :mode="track.euclideanMode || 'linear'" />

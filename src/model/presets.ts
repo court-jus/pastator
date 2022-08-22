@@ -189,6 +189,14 @@ export const rythmPresets: Record<string, LabeledPreset> = {
     label: "cha-cha",
     data: [100, 0, 100, 0, 100, 100, 100, 0]
   },
+  "samba": {
+    label: "Samba",
+    data: [100, 0, 0, 100, 0, 0, 100, 0, 0, 0, 100, 0, 0, 100, 0, 0]
+  },
+  "tresillo": {
+    label: "Tresillo",
+    data: [100, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 100, 0, 0, 0]
+  },
   "a": {
     label: "a",
     data: [100, 25, 50, 60, 80, 35, 40, 70, 90, 45, 70, 20, 85, 25, 35, 30]

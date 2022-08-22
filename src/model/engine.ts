@@ -139,7 +139,9 @@ export const playNote = (
 };
 
 export const stopNote = (port: MIDIOutput, channel: number, note: number) => {
-  if (note > -1 && note < 128) port.send([0x80 | (0 << 4) | channel, note, 64]);
+  if (note > -1 && note < 128) {
+    port.send([0x80 | (0 << 4) | channel, note, 64])
+  };
 };
 
 const noteNames = [

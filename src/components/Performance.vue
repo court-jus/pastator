@@ -204,7 +204,7 @@ export default defineComponent({
         this.tracksPlaying = !this.tracksPlaying;
         for (const track of this.tracks) {
           if (this.tracksPlaying) {
-            track.play(this.songData);
+            track.play(this.songData, this.clock);
           } else {
             track.fullStop();
           }
@@ -219,6 +219,7 @@ export default defineComponent({
         this.tracksPlaying = false;
         for (const track of this.tracks) {
           track.fullStop();
+          track.rew();
         }
       }
       this.rewind();
@@ -226,11 +227,15 @@ export default defineComponent({
     rewind() {
       this.position = 0;
       this.songData.currentChord = this.songData.chordProgression[this.position % this.songData.chordProgression.length];
+      for (const track of this.tracks) {
+        track.rew();
+      }
     },
     panic() {
       this.stop();
       for (const track of this.tracks) {
         track.fullStop(true);
+        track.rew();
       }
     },
     loadFile(evt: Event) {
