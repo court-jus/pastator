@@ -51,11 +51,11 @@ export class TrackModel {
   constructor(device: MIDIOutput) {
     this.device = device;
     this.channel = 0;
-    this.division = BarLength;
+    this.division = BarLength / 4;
     this.gate = 90;
     this.notesMode = "manual";
     this.rythmMode = "durations";
-    this.playMode = "random";
+    this.playMode = "up";
     this.relatedTo = "chord";
     this.transpose = 0;
     this.baseVelocity = 100;
@@ -70,7 +70,7 @@ export class TrackModel {
     this.singleShots = 0;
     this.timeouts = [];
     this.gravityCenter = 64;
-    this.gravityStrength = 1;
+    this.gravityStrength = 15;
   }
 
   // Load/Save/...
