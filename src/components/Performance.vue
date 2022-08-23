@@ -347,7 +347,20 @@ export default defineComponent({
         <div id="key-parameters" class="col-6">
           <div class="input-group">
             <span class="input-group-text">Root</span>
-            <input class="form-control" type="number" v-model="songData.rootNote" />
+            <select class="form-select" :value="songData.rootNote" @change="(evt) => { songData.rootNote = parseInt((evt.target as HTMLSelectElement).value, 10); }">
+              <option value="60">C</option>
+              <option value="61">C#</option>
+              <option value="62">D</option>
+              <option value="63">D#</option>
+              <option value="64">E</option>
+              <option value="65">F</option>
+              <option value="66">F#</option>
+              <option value="67">G</option>
+              <option value="68">G#</option>
+              <option value="69">A</option>
+              <option value="70">A#</option>
+              <option value="71">B</option>
+            </select>
             <span class="input-group-text">Mode</span>
             <select class="form-select" v-model="songData.scale">
               <option>major</option>
