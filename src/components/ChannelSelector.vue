@@ -19,7 +19,9 @@ export default defineComponent({
   emits: ["channelChange"],
   methods: {
     handleChange(ev: Event) {
-      this.$emit("channelChange", parseInt((ev.target as HTMLSelectElement).value, 10));
+      const newChannel = parseInt((ev.target as HTMLSelectElement).value, 10);
+      this.channel = newChannel;
+      this.$emit("channelChange", newChannel);
     }
   }
 });
@@ -27,6 +29,6 @@ export default defineComponent({
 
 <template>
   <select class="form-select" @change="handleChange" :value="channel">
-    <option v-for="(_, channel) in new Array(16).fill(0)" :value="channel">{{ channel }}</option>
+    <option v-for="(_, channel) in new Array(16).fill(0)" :value="channel">{{ channel + 1 }}</option>
   </select>
 </template>

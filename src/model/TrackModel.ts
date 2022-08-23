@@ -95,6 +95,10 @@ export class TrackModel {
     if (mode !== undefined) this.euclideanMode = mode;
     this.rythm();
   }
+  setChannel(newChannel: number) {
+    this.stop();
+    this.channel = newChannel;
+  }
 
   // Transport
   play(songData: SongData, clock: number) {

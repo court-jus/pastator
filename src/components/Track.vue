@@ -76,9 +76,6 @@ export default defineComponent({
     clock(newClock: number) {
       this.$props.track.tick(newClock, this.$props.songData);
     },
-    'track.channel'() {
-      this.$props.track.stop();
-    },
     'songData.currentChord'() {
       this.$props.track.currentChordChange(this.$props.songData, this.$props.clock);
     },
@@ -116,7 +113,7 @@ export default defineComponent({
         <div class="col-4">
           <div class="input-group" role="group">
             <span class="input-group-text">Channel</span>
-            <ChannelSelector :selected-channel="track.channel" @channel-change="(ch) => track.channel = ch" />
+            <ChannelSelector :selected-channel="track.channel" @channel-change="(ch) => { track.setChannel(ch); }" />
             <span class="input-group-text">Vol.</span>
             <input class="form-control choose-track-base-velocity" type="number" min="0" max="100" v-model="track.baseVelocity" />
           </div>
