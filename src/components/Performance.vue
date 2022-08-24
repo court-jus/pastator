@@ -17,6 +17,7 @@ import { scales, chords, BarLength } from "@/model/presets";
 import { download } from "@/utils";
 import type { Tour } from "@/types";
 import ConfirmButton from "./ConfirmButton.vue";
+import SongInDMinor from "@/examples/dminor";
 
 interface Data {
   tracks: TrackModel[]
@@ -35,10 +36,10 @@ export default defineComponent({
   data(): Data {
     return {
       tracks: [] as TrackModel[],
-      viewType: 'expand',
+      viewType: 'reduced',
       fileName: "",
       songData: {
-        chordProgression: [1, 1, 4, 4, 6, 5],
+        chordProgression: [1, 4, 6, 5],
         rootNote: 60,
         scale: "major",
         currentChord: 1,
@@ -163,7 +164,7 @@ export default defineComponent({
         this.panic();
       }
       if (newClock % this.barLength === 0) {
-        this.position += 1;
+        this.position = Math.trunc(newClock / this.barLength);
         if (this.playing) {
           this.songData.currentChord = this.songData.chordProgression[this.position % this.songData.chordProgression.length];
         }
@@ -248,19 +249,22 @@ export default defineComponent({
         if (typeof reader.result === "string") {
           this.fileName = f.name;
           const loadedSongData = JSON.parse(reader.result) as SavedSongModel;
-          this.songData.rootNote = loadedSongData.rootNote;
-          this.songData.scale = loadedSongData.scale;
-          this.songData.currentChord = loadedSongData.currentChord;
-          this.songData.currentChordType = loadedSongData.currentChordType;
-          this.songData.chordProgression = loadedSongData.chordProgression;
-          for (const trackData of loadedSongData.tracks) {
-            const newTrack = new TrackModel(this.$props.device);
-            newTrack.load(trackData);
-            this.addTrack(newTrack);
-          }
+          this.loadData(loadedSongData);
         }
       });
       reader.readAsText(f);
+    },
+    loadData(loadedSongData: SavedSongModel) {
+      this.songData.rootNote = loadedSongData.rootNote;
+      this.songData.scale = loadedSongData.scale;
+      this.songData.currentChord = loadedSongData.currentChord;
+      this.songData.currentChordType = loadedSongData.currentChordType;
+      this.songData.chordProgression = loadedSongData.chordProgression;
+      for (const trackData of loadedSongData.tracks) {
+        const newTrack = new TrackModel(this.$props.device);
+        newTrack.load(trackData);
+        this.addTrack(newTrack);
+      }
     },
     newProject() {
       this.tracks = [];
@@ -299,23 +303,8 @@ export default defineComponent({
     if (this.ccDevice) {
       this.setupCCDevice(this.ccDevice);
     }
-    /*
-    const newTrack = new TrackModel(this.$props.device);
-    newTrack.channel = 1;
-    newTrack.relatedTo = "scale";
-    newTrack.playMode = "up";
-    newTrack.availableDegrees = [0, 2, 10];
-    newTrack.division = 12;
-    newTrack.octaves = [-1];
-    newTrack.applyRythmMode("16steps");
-    newTrack.rythmDefinition = new Array(16).fill(80);
-    newTrack.velAmplitude = 15;
-    newTrack.velCenter = 80;
-    newTrack.proba = 80;
-    newTrack.applyNotesMode("melotor");
-    this.addTrack(newTrack);
-    newTrack.playpause(this.songData);
-    */
+    this.loadData(SongInDMinor);
+    // this.playpause(true, true);
   }
 });
 </script>

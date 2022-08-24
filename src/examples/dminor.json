@@ -1,0 +1,388 @@
+{
+    "chordProgression": [
+      1,
+      4,
+      6,
+      5
+    ],
+    "rootNote": 63,
+    "scale": "minor",
+    "currentChord": 5,
+    "currentChordType": "triad",
+    "tracks": [
+      {
+        "channel": 0,
+        "division": 48,
+        "gate": 90,
+        "transpose": 0,
+        "baseVelocity": 100,
+        "strumDelay": 0,
+        "rythmDefinition": [
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100
+        ],
+        "availableDegrees": [
+          0,
+          1,
+          2
+        ],
+        "octaves": [
+          0
+        ],
+        "notesMode": "manual",
+        "rythmMode": "16steps",
+        "playMode": "atonce",
+        "relatedTo": "chord",
+        "gravityCenter": 80,
+        "gravityStrength": 21,
+        "singleShots": 0,
+        "debug": false,
+        "cachedAvailableNotes": [
+          82,
+          73,
+          77
+        ],
+        "timeouts": []
+      },
+      {
+        "channel": 1,
+        "division": 6,
+        "gate": 98,
+        "transpose": 0,
+        "baseVelocity": 100,
+        "strumDelay": 0,
+        "rythmDefinition": [
+          83,
+          0,
+          84,
+          0,
+          73,
+          78,
+          0,
+          80,
+          0,
+          73,
+          0,
+          89
+        ],
+        "availableDegrees": [
+          2,
+          6,
+          6,
+          5
+        ],
+        "octaves": [
+          0
+        ],
+        "notesMode": "melotor",
+        "rythmMode": "preset",
+        "playMode": "up",
+        "relatedTo": "scale",
+        "gravityCenter": 64,
+        "gravityStrength": 10,
+        "velAmplitude": 20,
+        "velCenter": 80,
+        "proba": 100,
+        "melotor": {
+          "currentMelo": [
+            2,
+            6,
+            6,
+            5
+          ],
+          "meloChangeDiv": 16,
+          "meloChangeStrength": 18,
+          "meloLength": 7,
+          "notesProbabilities": [
+            100,
+            16,
+            60,
+            15,
+            40,
+            20,
+            50
+          ]
+        },
+        "singleShots": 0,
+        "cachedAvailableNotes": [
+          66,
+          73,
+          73,
+          71
+        ],
+        "timeouts": []
+      },
+      {
+        "channel": 2,
+        "division": 8,
+        "gate": 90,
+        "transpose": 0,
+        "baseVelocity": 100,
+        "strumDelay": 0,
+        "rythmDefinition": [
+          100,
+          80,
+          80
+        ],
+        "availableDegrees": [
+          0,
+          1,
+          2
+        ],
+        "octaves": [
+          0
+        ],
+        "notesMode": "manual",
+        "rythmMode": "manual",
+        "playMode": "up",
+        "relatedTo": "invchord",
+        "gravityCenter": 50,
+        "gravityStrength": 26,
+        "proba": 100,
+        "singleShots": 0,
+        "cachedAvailableNotes": [
+          53,
+          46,
+          49
+        ],
+        "timeouts": []
+      },
+      {
+        "channel": 3,
+        "division": 96,
+        "gate": 100,
+        "transpose": 0,
+        "baseVelocity": 100,
+        "strumDelay": 0,
+        "rythmDefinition": [
+          100
+        ],
+        "availableDegrees": [
+          0
+        ],
+        "octaves": [
+          -1
+        ],
+        "notesMode": "manual",
+        "rythmMode": "16steps",
+        "playMode": "atonce",
+        "relatedTo": "chord",
+        "gravityCenter": 64,
+        "gravityStrength": 15,
+        "proba": 100,
+        "preset": {
+          "id": "drone",
+          "label": "Drone",
+          "notes": [
+            0
+          ],
+          "rythm": [
+            100
+          ],
+          "octaves": [
+            -1
+          ],
+          "division": 0,
+          "playMode": "atonce",
+          "relatedTo": "scale",
+          "category": "pad"
+        },
+        "singleShots": 0,
+        "cachedAvailableNotes": [
+          58
+        ],
+        "timeouts": []
+      },
+      {
+        "channel": 9,
+        "division": 24,
+        "gate": 90,
+        "transpose": 0,
+        "baseVelocity": 100,
+        "strumDelay": 0,
+        "rythmDefinition": [
+          100,
+          0,
+          100,
+          0
+        ],
+        "availableDegrees": [
+          36
+        ],
+        "octaves": [
+          0
+        ],
+        "notesMode": "manual",
+        "rythmMode": "16steps",
+        "playMode": "random",
+        "relatedTo": "static",
+        "gravityCenter": 64,
+        "gravityStrength": 15,
+        "preset": {
+          "id": "kick13",
+          "label": "Kick on 1, 3",
+          "notes": [
+            36
+          ],
+          "rythm": [
+            100,
+            0,
+            100,
+            0
+          ],
+          "octaves": [
+            0
+          ],
+          "division": 24,
+          "playMode": "random",
+          "relatedTo": "static",
+          "category": "drums"
+        },
+        "singleShots": 0,
+        "cachedAvailableNotes": [
+          36
+        ],
+        "timeouts": []
+      },
+      {
+        "channel": 9,
+        "division": 12,
+        "gate": 90,
+        "transpose": 0,
+        "baseVelocity": 100,
+        "strumDelay": 0,
+        "rythmDefinition": [
+          100,
+          0,
+          0,
+          100,
+          0,
+          0,
+          100,
+          0,
+          0,
+          0,
+          100,
+          0,
+          0,
+          100,
+          0,
+          0
+        ],
+        "availableDegrees": [
+          38
+        ],
+        "octaves": [
+          0
+        ],
+        "notesMode": "manual",
+        "rythmMode": "preset",
+        "playMode": "random",
+        "relatedTo": "static",
+        "gravityCenter": 64,
+        "gravityStrength": 15,
+        "preset": {
+          "id": "snare24",
+          "label": "Snare on 2, 4",
+          "notes": [
+            38
+          ],
+          "rythm": [
+            0,
+            100,
+            0,
+            100
+          ],
+          "octaves": [
+            0
+          ],
+          "division": 24,
+          "playMode": "random",
+          "relatedTo": "static",
+          "category": "drums"
+        },
+        "singleShots": 0,
+        "cachedAvailableNotes": [
+          38
+        ],
+        "timeouts": []
+      },
+      {
+        "channel": 9,
+        "division": 12,
+        "gate": 90,
+        "transpose": 0,
+        "baseVelocity": 100,
+        "strumDelay": 0,
+        "rythmDefinition": [
+          74
+        ],
+        "availableDegrees": [
+          42
+        ],
+        "octaves": [
+          0
+        ],
+        "notesMode": "manual",
+        "rythmMode": "preset",
+        "playMode": "random",
+        "relatedTo": "static",
+        "gravityCenter": 64,
+        "gravityStrength": 15,
+        "velAmplitude": 20,
+        "velCenter": 76,
+        "proba": 100,
+        "preset": {
+          "id": "chhn",
+          "label": "Closed HH, halfnotes",
+          "notes": [
+            42
+          ],
+          "rythm": [
+            90,
+            75,
+            80,
+            75,
+            90,
+            65,
+            100,
+            70,
+            95,
+            60,
+            60,
+            85,
+            90,
+            45,
+            80,
+            75
+          ],
+          "octaves": [
+            0
+          ],
+          "division": 12,
+          "playMode": "random",
+          "relatedTo": "static",
+          "category": "drums"
+        },
+        "singleShots": 0,
+        "cachedAvailableNotes": [
+          42
+        ],
+        "timeouts": []
+      }
+    ]
+  }

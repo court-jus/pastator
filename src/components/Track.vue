@@ -12,7 +12,8 @@ import RythmPresetSelector from "./RythmPresetSelector.vue";
 import NotesPresetSelector from "./NotesPresetSelector.vue";
 import ChannelSelector from "./ChannelSelector.vue";
 import StrumSelector from "./StrumSelector.vue";
-import Slider from "./Slider.vue";
+import DivisionSelector from "./DivisionSelector.vue";
+import MelotorEdit from "./MelotorEdit.vue";
 
 interface Props {
   track: TrackModel
@@ -73,8 +74,8 @@ export default defineComponent({
     device(newDevice: MIDIOutput) {
       this.$props.track.device = newDevice;
     },
-    clock(newClock: number) {
-      this.$props.track.tick(newClock, this.$props.songData);
+    clock(newClock: number, oldClock: number) {
+      this.$props.track.tick(newClock, oldClock, this.$props.songData);
     },
     'songData.currentChord'() {
       this.$props.track.currentChordChange(this.$props.songData, this.$props.clock);
@@ -174,10 +175,7 @@ export default defineComponent({
     </div>
     <div class="col-12" v-if="computedView !== 'reduced' && track.notesMode === 'melotor' && track.melotor?.notesProbabilities !== undefined">
       <div class="row mt-1 mb-1">
-        <div class="col-1 text-center" v-for="(noteProba, idx) of track.melotor.notesProbabilities">
-          <Slider :model-value="noteProba" @update:model-value="(newVal) => { if(track.melotor) { track.melotor.notesProbabilities[idx] = newVal;  } }"/>
-          {{ noteNumberToName(scales[songData.scale][idx] + songData.rootNote, songData, false) }}
-        </div>
+        <MelotorEdit :melotor="track.melotor" :song-data="songData" />
       </div>
     </div>
     <div class="col-12" v-if="computedView === 'expand'">
@@ -204,8 +202,7 @@ export default defineComponent({
               <option value="dexp">Exp. D</option>
               <option value="uexp">Exp. U</option>
             </select>
-            <span class="input-group-text">Div.</span>
-            <input class="form-control choose-track-division" type="number" min="0" v-model="track.division" />
+            <DivisionSelector :selected="track.division" @value-change="(newVal) => { track.division = newVal; }" />
           </div>
         </div>
       </div>

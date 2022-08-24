@@ -1,6 +1,5 @@
 import { scales, chords } from "./presets";
-import type { EuclideanMode, SongData } from "@/model/types";
-import type { MelotorModel } from "./TrackModel";
+import type { EuclideanMode, MelotorModel, SongData } from "@/model/types";
 
 export const getNotes = (
   song: SongData,
@@ -72,8 +71,8 @@ export const computeMelotor = (
   if (ponderatedNotes.length === 0) {
     ponderatedNotes.push(0);
   }
-  const melo = [...melotor.currentMelo];
-  if (melo.length === 0) {
+  const melo = [...melotor.currentMelo.slice(0, melotor.meloLength)];
+  if (melo.length < melotor.meloLength) {
     while (melo.length < melotor.meloLength) {
       const idx = Math.trunc(Math.random() * ponderatedNotes.length);
       const candidate = ponderatedNotes[idx];

@@ -28,3 +28,11 @@ export type PresetCategories = Record<string, Preset[]>;
 export type DegreesRelation = "chord" | "scale" | "invchord" | "static";
 
 export type EuclideanMode = "linear" | "sinus" | "dexp" | "uexp";
+
+export type MelotorModel = {
+  notesProbabilities: number[];
+  currentMelo: number[];
+  meloLength: number;
+  meloChangeDiv: number;
+  meloChangeStrength: number;
+};

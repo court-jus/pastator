@@ -1,14 +1,7 @@
-import type { DegreesRelation, EuclideanMode, Preset, SongData } from "./types";
+import type { DegreesRelation, EuclideanMode, MelotorModel, Preset, SongData } from "./types";
 import { computeEuclidean, computeMelotor, getNotes, playNote, stopNote } from "./engine";
 import { BarLength, rythmPresets, notesPresets } from "./presets";
 
-export type MelotorModel = {
-  notesProbabilities: number[];
-  currentMelo: number[];
-  meloLength: number;
-  meloChangeDiv: number;
-  meloChangeStrength: number;
-};
 
 export type RythmMode = "manual" | "preset" | "16steps" | "euclidean" | "durations";
 export type NotesMode = "manual" | "preset" | "ponderated" | "melotor" | "random";
@@ -54,13 +47,13 @@ export class TrackModel {
     this.division = BarLength / 4;
     this.gate = 90;
     this.notesMode = "manual";
-    this.rythmMode = "durations";
+    this.rythmMode = "16steps";
     this.playMode = "up";
     this.relatedTo = "chord";
     this.transpose = 0;
     this.baseVelocity = 100;
     this.strumDelay = 0;
-    this.rythmDefinition = new Array(4).fill(BarLength / 4);
+    this.rythmDefinition = new Array(16).fill(100);
     this.availableDegrees = [0, 1, 2];
     this.octaves = [0];
     this.currentNotes = {};
@@ -168,7 +161,7 @@ export class TrackModel {
         return [0, total + curr] as [number, number];
       }, [0, 0])[0];
     }
-    this.rythmPosition += 1;
+    this.rythmPosition = Math.trunc(clock / this.division);
     const velocity = this.rythm();
     if (velocity > 0 && this.channel !== undefined && duration > 0) {
       if (this.debug) console.log(this.channel, "emit", playedNotes, "at", this.position);
@@ -221,7 +214,7 @@ export class TrackModel {
     }
   }
   // Clock
-  tick(newClock: number, songData: SongData) {
+  tick(newClock: number, oldClock: number, songData: SongData) {
     if (this.division === 0) return;
     // this.position = Math.trunc(newClock / this.division);
     if (Object.keys(this.currentNotes).length > 0 && this.channel !== undefined) {
@@ -238,7 +231,7 @@ export class TrackModel {
         delete this.currentNotes[note];
       }
     }
-    if (newClock % this.division === 0) {
+    if (newClock % this.division === 0 || oldClock === 0) {
       if (
         this.playing ||
         (this.singleShots !== undefined && this.singleShots > 0)
