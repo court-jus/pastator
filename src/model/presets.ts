@@ -235,6 +235,6 @@ export const chords = {
   sus4: [1, 4, 5],
   sixth: [1, 3, 5, 6],
   seventh: [1, 3, 5, 7],
-  ninth: [1, 3, 5, 7, 9],
-  eleventh: [1, 3, 5, 7, 9, 11],
+  ninth: [1, 3, 7, 9],
+  eleventh: [1, 3, 7, 9, 11],
 };

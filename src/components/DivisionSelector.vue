@@ -1,7 +1,8 @@
 <script setup lang="ts">
 
 interface Props {
-  selected?: number
+  selected?: number,
+  showLabel?: boolean
 }
 
 defineProps<Props>()
@@ -9,18 +10,21 @@ defineProps<Props>()
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { BarLength } from "@/model/presets";
 
 const Choices = [
-  ['1/32', 3],
-  ['1/16T', 4],
-  ['1/16', 6],
-  ['1/8T', 8],
-  ['1/8', 12],
-  ['1/4T', 16],
-  ['1/4', 24],
-  ['1/2', 48],
-  ['1', 96],
-  ['2', 192],
+  ['1/32', BarLength / 32],
+  ['1/16T', BarLength / 24],
+  ['1/16', BarLength / 16],
+  ['1/8T', BarLength / 12],
+  ['1/8', BarLength / 8],
+  ['1/4T', BarLength / 6],
+  ['1/4', BarLength / 4],
+  ['1/2', BarLength / 2],
+  ['1', BarLength],
+  ['2', BarLength * 2],
+  ['4', BarLength * 4],
+  ['8', BarLength * 8],
   ['Manual', 0],
 ];
 
@@ -56,7 +60,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <span class="input-group-text">Div.</span>
+  <span v-if="showLabel" class="input-group-text">Div.</span>
   <input v-if="showManualValue" class="form-control choose-track-division" type="number" min="3" :value="manualValue" @change="handleManualValueChange" />
   <select class="form-select" @change="handleChange" :value="internalValue">
     <option v-for="[label, choice] of Choices" :value="choice">{{ label }}</option>

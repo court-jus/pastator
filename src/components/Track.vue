@@ -131,7 +131,7 @@ export default defineComponent({
       <div class="row">
         <div :class="track.notesMode === 'melotor' ? 'col-9' : 'col-6'">
           <div class="edit-track-notes input-group">
-            <select class="input-group-text form-select" v-model="track.notesMode" @change="(ev: Event) => track.applyNotesMode((ev.target as HTMLSelectElement).value as NotesMode)">
+            <select class="input-group-text form-select" v-model="track.notesMode" @change="(ev: Event) => track.applyNotesMode((ev.target as HTMLSelectElement).value as NotesMode, songData)">
               <option value="manual">Manual</option>
               <option value="preset">Preset</option>
               <option value="ponderated">Ponderated</option>

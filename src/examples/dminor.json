@@ -106,6 +106,7 @@
           ],
           "meloChangeDiv": 16,
           "meloChangeStrength": 18,
+          "chordInfluence": 25,
           "meloLength": 7,
           "notesProbabilities": [
             100,

@@ -18,6 +18,9 @@ import { download } from "@/utils";
 import type { Tour } from "@/types";
 import ConfirmButton from "./ConfirmButton.vue";
 import SongInDMinor from "@/examples/dminor";
+import SongMelotor from "@/examples/melotor";
+
+type ViewType = "expand" | "reduced" | "perf";
 
 interface Data {
   tracks: TrackModel[]
@@ -29,7 +32,7 @@ interface Data {
   barLength: number
   tour: Tour
   trackTour: Tour
-  viewType: string
+  viewType: ViewType
 }
 
 export default defineComponent({

@@ -1,10 +1,15 @@
 import type { SavedTrackModel } from "@/model/TrackModel"
 
+
+export type Scale = "major" | "minor";
+
+export type ChordType = "triad" | "power" | "sus2" | "sus4" | "sixth" | "seventh" | "ninth" | "eleventh";
+
 export interface SongData {
   rootNote: number
-  scale: "major" | "minor"
+  scale: Scale
   currentChord: number
-  currentChordType: "triad" | "power" | "sus2" | "sus4" | "sixth" | "seventh" | "ninth" | "eleventh"
+  currentChordType: ChordType
   chordProgression: number[]
 }
 
@@ -35,4 +40,5 @@ export type MelotorModel = {
   meloLength: number;
   meloChangeDiv: number;
   meloChangeStrength: number;
+  chordInfluence: number;
 };

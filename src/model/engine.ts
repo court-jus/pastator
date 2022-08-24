@@ -1,5 +1,22 @@
 import { scales, chords } from "./presets";
-import type { EuclideanMode, MelotorModel, SongData } from "@/model/types";
+import type { ChordType, EuclideanMode, MelotorModel, Scale, SongData } from "@/model/types";
+
+const getCandidateNotes = (relatedTo: string, scale: Scale, chordType: ChordType, chord: number) => {
+  const scaleScheme = scales[scale];
+  return (
+    relatedTo === "chord" || relatedTo === "invchord"
+      ? chords[chordType].map((noteDegree: number) => {
+          const targetNote = noteDegree - 1 + (chord - 1);
+          return (
+            scaleScheme[targetNote % scaleScheme.length] +
+            (relatedTo === "chord"
+              ? 12 * Math.trunc(targetNote / scaleScheme.length)
+              : 0)
+          );
+        })
+      : scaleScheme
+  );
+}
 
 export const getNotes = (
   song: SongData,
@@ -11,19 +28,7 @@ export const getNotes = (
     // Keep the notes as they are
     return notes;
   }
-  const scaleScheme = scales[song.scale];
-  const candidateNotes =
-    relatedTo === "chord" || relatedTo === "invchord"
-      ? chords[song.currentChordType].map((noteDegree: number) => {
-          const targetNote = noteDegree - 1 + (song.currentChord - 1);
-          return (
-            scaleScheme[targetNote % scaleScheme.length] +
-            (relatedTo === "chord"
-              ? 12 * Math.trunc(targetNote / scaleScheme.length)
-              : 0)
-          );
-        })
-      : scaleScheme;
+  const candidateNotes = getCandidateNotes(relatedTo, song.scale, song.currentChordType, song.currentChord);
   const result = [];
   for (const octave of octaves) {
     result.push(
@@ -50,19 +55,27 @@ export const getNotes = (
 export const computeMelotor = (
   melotor: MelotorModel,
   position: number,
-  force = false
+  baseDivision: number,
+  songData: SongData,
 ): number[] => {
   if (
     melotor.currentMelo.length > 0 &&
-    (position % melotor.meloChangeDiv) !== 0 &&
-    !force
+    (position % (melotor.meloChangeDiv / baseDivision)) !== 0
   ) {
     return melotor.currentMelo;
   }
+  const chordNotes = chords[songData.currentChordType].map(val => (val - 1 + songData.currentChord - 1) % 7);
   const availableNotes = [0, 1, 2, 3, 4, 5, 6]; // TODO: read that from Song Data
+  const indexedProbabilities = availableNotes.reduce(
+    (acc: Record<number, number>, note: number, idx: number): Record<number, number> => {
+      const isInChord = chordNotes.indexOf(note) >= 0 ? 1 : 0;
+      const proba = Math.trunc(((melotor.notesProbabilities[idx] || 0) / 100 * (100 - melotor.chordInfluence)) + isInChord * melotor.chordInfluence);
+      return {...acc, [note]: proba};
+    }, {}
+  )
   const ponderatedNotes = availableNotes.reduce(
-    (acc: number[], note: number, idx: number): number[] => {
-      const proba = melotor.notesProbabilities[idx] || 0;
+    (acc: number[], note: number): number[] => {
+      const proba = indexedProbabilities[note];
       const copied = new Array(proba).fill(note);
       return [...acc, ...copied];
     },
@@ -79,16 +92,21 @@ export const computeMelotor = (
       melo.push(candidate);
     }
   } else {
-    let indexes = new Array(melotor.meloLength).fill(1).map((_, idx) => idx);
+    let changeCandidates = melotor.currentMelo.reduce(
+      (acc: [number, number][], note: number, idx: number): [number, number][] => {
+        return [...acc, ...new Array(100 - indexedProbabilities[note]).fill([note, idx])];
+      },
+      []
+    )
     let howManyToChange = Math.ceil(
       (melotor.meloChangeStrength / 100) * melotor.meloLength
     );
     while (howManyToChange === undefined || howManyToChange > 0) {
-      const chosen = indexes[Math.trunc(Math.random() * indexes.length)];
-      melo[chosen] =
+      const [chosenNote, chosenIdx] = changeCandidates[Math.trunc(Math.random() * changeCandidates.length)];
+      melo[chosenIdx] =
         ponderatedNotes[Math.trunc(Math.random() * ponderatedNotes.length)];
       howManyToChange -= 1;
-      indexes.splice(chosen, 1);
+      changeCandidates = changeCandidates.filter(val => val[1] !== chosenIdx);
     }
   }
   return melo;
