@@ -216,6 +216,10 @@ export function isMIDIMessageEvent(
   return (event as MIDIMessageEvent).data !== undefined;
 }
 
+export function isMIDIInput(device: MIDIInput | MIDIOutput): device is MIDIInput {
+  return (device as MIDIInput).onmidimessage !== undefined;
+}
+
 export const getMIDIMessage = (message: MIDIMessageEvent) => {
   let type = "";
   let channel: string | number = "";

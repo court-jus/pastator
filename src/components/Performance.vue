@@ -284,7 +284,7 @@ export default defineComponent({
       download(filename, json);
     },
     setupCCDevice(newDevice: MIDIInput) {
-      newDevice.onmidimessage = (message) => {
+      newDevice.addEventListener("midimessage", (message) => {
         if (isMIDIMessageEvent(message)) {
           const m = getMIDIMessage(message);
           if (m.type === "Control Change") {
@@ -296,7 +296,7 @@ export default defineComponent({
             }
           }
         }
-      }
+      });
     }
   },
   mounted() {

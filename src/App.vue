@@ -2,7 +2,7 @@
 import SelectMidiInput from "./components/SelectMidiInput.vue";
 import SelectMidiOutput from "./components/SelectMidiOutput.vue";
 import Performance from "./components/Performance.vue";
-import { getMIDIMessage, isMIDIMessageEvent } from "./model/engine";
+import { getMIDIMessage, isMIDIMessageEvent, isMIDIInput } from "./model/engine";
 import { BarLength } from "./model/presets";
 </script>
 
@@ -18,6 +18,8 @@ interface AppData {
   clock: number
   tour: Tour
   showMidiDevices: boolean
+  midiDebug: boolean
+  midiLogs?: [string, number][]
 }
 
 function loadMidiDeviceFromLocalStorage(label: string): string | null {
@@ -42,6 +44,8 @@ export default {
       showMidiDevices: localStorage.getItem("midiclock") === null || localStorage.getItem("midioutput") === null,
       midiSystem: undefined,
       clock: 0,
+      midiDebug: false,
+      midiLogs: [],
       tour: {
         steps: [
           {
@@ -76,11 +80,16 @@ export default {
         (access) => {
           this.midiSystem = access;
           this.midiClockDevice = loadMidiInputDeviceFromLocalStorage(access, "midiclock");
+          if (this.midiClockDevice) this.attachMidiLogger(this.midiClockDevice, "midiclock");
           this.midiOutputDevice = loadMidiOutputDeviceFromLocalStorage(access, "midioutput");
+          if (this.midiOutputDevice) this.attachMidiLogger(this.midiOutputDevice, "midioutput");
           this.midiCCDevice = loadMidiInputDeviceFromLocalStorage(access, "midicc");
+          if (this.midiCCDevice) this.attachMidiLogger(this.midiCCDevice, "midicc");
           this.midiNotesDevice = loadMidiInputDeviceFromLocalStorage(access, "midinotes");
+          if (this.midiNotesDevice) this.attachMidiLogger(this.midiNotesDevice, "midinotes");
           this.midiSystem.onstatechange = (event) => {
-            console.log("MIDI onstatechange", event);
+            const ev = event as MIDIConnectionEvent;
+            this.addMidiLog(`[root] ${ev.port.name} connected`)
           };
         },
         (error) => {
@@ -97,21 +106,33 @@ export default {
         oldDevice.onmidimessage = null;
         oldDevice.close();
       }
-      newDevice.onmidimessage = (message) => {
-        if (isMIDIMessageEvent(message)) {
-          const m = getMIDIMessage(message);
-          if (m.type === "System" && m.channel === "Stop") {
-            this.clock = 0;
-          } else if (m.type === "System" && m.channel === "Clock") {
-            this.clock += 1;
-          }
-        };
-
+      if (newDevice) {
+        newDevice.addEventListener("midimessage", (message) => {
+          if (isMIDIMessageEvent(message)) {
+            const m = getMIDIMessage(message);
+            this.addMidiLog(`[clock]: ${m.type} ${m.channel}`)
+            if (m.type === "System" && m.channel === "Stop") {
+              this.clock = 0;
+            } else if (m.type === "System" && m.channel === "Clock") {
+              this.clock += 1;
+            }
+          };
+        });
       }
     }
   },
   methods: {
-    onTourFinishedOrSkipped () {
+    addMidiLog(msg: string) {
+      if (!this.midiDebug || !this.midiLogs) return;
+      if (this.midiLogs.length === 0) this.midiLogs.push([msg, 1]);
+      const [lastMessage, count] = this.midiLogs[this.midiLogs.length - 1];
+      if (msg === lastMessage) {
+        this.midiLogs[this.midiLogs.length - 1][1] += 1;
+      } else {
+        this.midiLogs.push([msg, 1]);
+      }
+    },
+    onTourFinishedOrSkipped() {
       localStorage.setItem("skipMainTour", "true");
     },
     onLogoClicked () {
@@ -119,6 +140,17 @@ export default {
       localStorage.removeItem("skipPerfTour");
       localStorage.removeItem("skipTrackTour");
       this.$tours["mainTour"].start();
+    },
+    attachMidiLogger(device: MIDIInput | MIDIOutput, label: string) {
+      if (isMIDIInput(device)) {
+        device.addEventListener("midimessage", (message) => {
+          if (!this.midiDebug) return;
+          if (isMIDIMessageEvent(message)) {
+            const m = getMIDIMessage(message);
+            this.addMidiLog(`[${label}.${m.channel}]: ${m.type} ${m.data}`)
+          };
+        });
+      }
     },
     midiDeviceSelected(newDevice: MIDIInput | MIDIOutput, label: string) {
       if (label === "midiclock") {
@@ -130,9 +162,16 @@ export default {
       } else if (label === "midinotes") {
         this.midiNotesDevice = newDevice as MIDIInput;
       }
+      if (newDevice.name) {
+        this.addMidiLog(`${label} selected ${newDevice.name}`);
+      } else {
+        this.addMidiLog(`${label} selected ${newDevice.id}`)
+      }
+      this.attachMidiLogger(newDevice, label);
       localStorage.setItem(label, newDevice.id);
     },
     onClearSavedMIDIDevices() {
+      this.addMidiLog("Clear MIDI Devices");
       localStorage.removeItem("midiclock");
       localStorage.removeItem("midioutput");
       localStorage.removeItem("midicc");
@@ -141,6 +180,10 @@ export default {
       this.midiOutputDevice = undefined;
       this.midiCCDevice = undefined;
       this.midiNotesDevice = undefined;
+    },
+    onMidiDebugBtn() {
+      this.midiDebug = !this.midiDebug;
+      // if (this.midiDebug) this.midiLogs = [];
     }
   }
 }
@@ -194,13 +237,23 @@ export default {
             Clear saved MIDI devices
           </button>
         </div>
+        <div class="row">
+          <button class="btn btn-primary btn-warning" @click="onMidiDebugBtn">
+            MIDI Debug
+          </button>
+        </div>
       </div>
     </div>
     <div class="col" v-if="!midiSystem">
       Trying to get access to MIDI System...
     </div>
-    <div class="col-12" v-if="midiOutputDevice && midiClockDevice">
+    <div class="col-12" v-if="midiOutputDevice && midiClockDevice && !midiDebug">
       <Performance :device="midiOutputDevice" :clock="clock" :cc-device="midiCCDevice" />
+    </div>
+    <div class="col-12" v-if="midiDebug">
+      <pre v-if="midiLogs">
+        <span v-for="[log, count] in midiLogs.slice().reverse().slice(0, 100)">{{count}} - {{ log }}</span>
+      </pre>
     </div>
   </div>
   <v-tour name="mainTour" :steps="tour.steps" :callbacks="tour.callbacks" :options="{ highlight: true }"></v-tour>
@@ -228,5 +281,15 @@ export default {
   .logo {
     margin: 0 2rem 0 0;
   }
+}
+
+pre {
+  background-color: lightgray;
+  color: black;
+  border: 1px solid black;
+  font-family: monospace;
+}
+pre span {
+  display: block;
 }
 </style>
