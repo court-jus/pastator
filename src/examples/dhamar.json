@@ -1,0 +1,85 @@
+{
+  "chordProgression": [
+    1,
+    4,
+    6,
+    5
+  ],
+  "rootNote": 60,
+  "scale": "major",
+  "currentChord": 1,
+  "currentChordType": "triad",
+  "tracks": [
+    {
+      "channel": 1,
+      "division": 6,
+      "gate": 98,
+      "transpose": 0,
+      "baseVelocity": 100,
+      "strumDelay": 0,
+      "rythmDefinition": [
+        100,
+        0,
+        0,
+        0,
+        0,
+        100,
+        0,
+        100,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0
+      ],
+      "availableDegrees": [
+        0,
+        0,
+        0,
+        4
+      ],
+      "octaves": [
+        0
+      ],
+      "notesMode": "melotor",
+      "rythmMode": "preset",
+      "playMode": "up",
+      "relatedTo": "scale",
+      "gravityCenter": 64,
+      "gravityStrength": 10,
+      "velAmplitude": 20,
+      "velCenter": 80,
+      "proba": 100,
+      "melotor": {
+        "currentMelo": [
+          0,
+          0,
+          0,
+          4
+        ],
+        "meloChangeDiv": 168,
+        "meloChangeStrength": 25,
+        "chordInfluence": 60,
+        "meloLength": 4,
+        "notesProbabilities": [
+          65,
+          12,
+          55,
+          10,
+          35,
+          20,
+          40
+        ]
+      },
+      "singleShots": 0,
+      "cachedAvailableNotes": [
+        66,
+        73,
+        73,
+        71
+      ],
+      "timeouts": []
+    }
+  ]
+}

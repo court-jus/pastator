@@ -19,6 +19,7 @@ import type { Tour } from "@/types";
 import ConfirmButton from "./ConfirmButton.vue";
 import SongInDMinor from "@/examples/dminor";
 import SongMelotor from "@/examples/melotor";
+import SongDhamar from "@/examples/dhamar";
 
 type ViewType = "expand" | "reduced" | "perf";
 
