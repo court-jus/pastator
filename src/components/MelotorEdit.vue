@@ -41,8 +41,8 @@ export default defineComponent({
     <span class="input-group-text">Change every</span>
     <DivisionSelector :selected="melotor.meloChangeDiv" @value-change="(newValue: number) => { melotor.meloChangeDiv = newValue; }"/>
     <span class="input-group-text">how much?</span>
-    <input class="form-control choose-track-gravity-strength" type="number" min="1" max="27" v-model="melotor.meloChangeStrength" />
+    <input class="form-control choose-track-gravity-strength" type="number" min="0" max="100" v-model="melotor.meloChangeStrength" />
     <span class="input-group-text">Chord influence</span>
-    <input class="form-control choose-track-gravity-strength" type="number" min="1" max="27" v-model="melotor.chordInfluence" />
+    <input class="form-control choose-track-gravity-strength" type="number" min="0" max="100" v-model="melotor.chordInfluence" />
   </div>
 </template>

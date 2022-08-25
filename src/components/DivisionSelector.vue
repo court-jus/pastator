@@ -28,12 +28,14 @@ const Choices = [
   ['Manual', 0],
 ];
 
+const PresetValues = Choices.map(([_, value]) => value);
+
 export default defineComponent({
   data() {
     return {
-      internalValue: this.$props.selected || 0,
+      internalValue: (this.$props.selected && PresetValues.indexOf(this.$props.selected) >= 0) ? this.$props.selected : 0,
       manualValue: this.$props.selected || 0,
-      showManualValue: false
+      showManualValue: !(this.$props.selected && PresetValues.indexOf(this.$props.selected) >= 0)
     }
   },
   emits: ["valueChange"],

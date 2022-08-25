@@ -93,20 +93,21 @@ export const computeMelotor = (
     }
   } else {
     let changeCandidates = melotor.currentMelo.reduce(
-      (acc: [number, number][], note: number, idx: number): [number, number][] => {
-        return [...acc, ...new Array(100 - indexedProbabilities[note]).fill([note, idx])];
+      (acc: number[], note: number, idx: number): number[] => {
+        return [...acc, ...new Array(Math.max(100 - indexedProbabilities[note], 1)).fill(idx)];
       },
       []
-    )
+    );
     let howManyToChange = Math.ceil(
       (melotor.meloChangeStrength / 100) * melotor.meloLength
     );
     while (howManyToChange === undefined || howManyToChange > 0) {
-      const [chosenNote, chosenIdx] = changeCandidates[Math.trunc(Math.random() * changeCandidates.length)];
+      const randomIdx = Math.trunc(Math.random() * changeCandidates.length);
+      const chosenIdx = changeCandidates[randomIdx];
       melo[chosenIdx] =
         ponderatedNotes[Math.trunc(Math.random() * ponderatedNotes.length)];
+      changeCandidates = changeCandidates.filter(val => val !== chosenIdx);
       howManyToChange -= 1;
-      changeCandidates = changeCandidates.filter(val => val[1] !== chosenIdx);
     }
   }
   return melo;
