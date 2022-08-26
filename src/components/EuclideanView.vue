@@ -10,7 +10,7 @@ defineProps<Props>()
 <script lang="ts">
 import { defineComponent } from "vue";
 import type { EuclideanMode } from "@/model/types";
-import { computeEuclideanValue, computeEuclidean } from "@/model/engine";
+import { computeEuclidean } from "@/model/engine";
 
 const GridSize = 64;
 

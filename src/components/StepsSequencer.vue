@@ -15,18 +15,19 @@ export default defineComponent({
   methods: {
     computedStyle(vel: number, idx: number) {
       const style: Record<string, any> = {
-        width: 100 / this.$props.modelValue.length + '%',
+        width: 100 / this.modelValue.length + '%',
         backgroundColor: "rgba(0, 0, 0, " + (vel / 100) + ")"
       };
-      if ((this.$props.position % this.$props.modelValue.length) === idx) {
+      if ((this.position % this.modelValue.length) === idx) {
         style["borderColor"] = "red";
       }
       return style;
     },
     handleClick(idx: number) {
-      this.$props.modelValue[idx] = (
-        (this.$props.modelValue[idx] > 0) ? 0 : 100
+      this.modelValue[idx] = (
+        (this.modelValue[idx] > 0) ? 0 : 100
       )
+      this.$emit("update:modelValue", this.modelValue);
     }
   }
 });
@@ -35,7 +36,11 @@ export default defineComponent({
 <template>
   <div class="row">
     <div class="col-12">
-      <div class="step clickable" v-for="(vel, idx) in $props.modelValue" :style="computedStyle(vel, idx)" @click="() => handleClick(idx)">
+      <div class="step clickable"
+           v-for="(vel, idx) in modelValue"
+           :key="idx"
+           :style="computedStyle(vel, idx)"
+           @click="() => handleClick(idx)">
         &nbsp;
       </div>
     </div>

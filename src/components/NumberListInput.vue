@@ -2,6 +2,7 @@
 
 interface Props {
   modelValue: Number[]
+  readonly?: boolean
 }
 defineProps<Props>()
 </script>
@@ -15,7 +16,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <input class="form-control" :value="modelValue.join(' ')" @change="
+  <input :readonly="readonly" class="form-control" :value="modelValue.join(' ')" @change="
     $emit(
       'update:modelValue',
       ($event.target as HTMLInputElement).value.split(' ').map(

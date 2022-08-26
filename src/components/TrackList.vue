@@ -1,14 +1,9 @@
 <script setup lang="ts">
-import type { SongData } from "@/model/types";
-type TrackList = TrackModel[];
+import { SongModel } from "@/model/SongModel";
 
 interface Props {
-  tracks: TrackList
-  songData: SongData
-  device: MIDIOutput
-  clock: number
-  clockStart: number
-  removeTrack: (index: number) => void
+  song: SongModel
+  removeTrack: (trackId: string) => void
   viewType: string
 }
 defineProps<Props>()
@@ -17,7 +12,6 @@ defineProps<Props>()
 <script lang="ts">
 import { defineComponent } from "vue";
 import Track from "./Track.vue";
-import type { TrackModel } from "../model/TrackModel";
 
 export default defineComponent({});
 </script>
@@ -25,16 +19,9 @@ export default defineComponent({});
 
 <template>
   <Track
-    v-for="(track, index) of tracks"
-    :device="device"
+    v-for="track of Object.values(song.tracks)"
+    :key="track.id"
     :track="track"
-    :song-data="songData"
-    :clock="clock"
-    :clock-start="clockStart"
     :viewType="viewType"
-    :remove-track="() => removeTrack(index)" />
+    :remove-track="() => removeTrack(track.id)" />
 </template>
-
-
-<style scoped>
-</style>

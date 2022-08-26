@@ -1,5 +1,6 @@
 import { scales, chords } from "./presets";
-import type { ChordType, EuclideanMode, MelotorModel, Scale, SongData } from "@/model/types";
+import { SongModel } from "./SongModel";
+import type { ChordType, EuclideanMode, MelotorModel, Scale } from "./types";
 
 const getCandidateNotes = (relatedTo: string, scale: Scale, chordType: ChordType, chord: number) => {
   const scaleScheme = scales[scale];
@@ -19,7 +20,7 @@ const getCandidateNotes = (relatedTo: string, scale: Scale, chordType: ChordType
 }
 
 export const getNotes = (
-  song: SongData,
+  song: SongModel,
   notes: number[],
   octaves: number[],
   relatedTo: string
@@ -56,13 +57,13 @@ export const computeMelotor = (
   melotor: MelotorModel,
   position: number,
   baseDivision: number,
-  songData: SongData,
-): number[] => {
+  songData: SongModel,
+): number[] | undefined => {
   if (
     melotor.currentMelo.length > 0 &&
     (position % (melotor.meloChangeDiv / baseDivision)) !== 0
   ) {
-    return melotor.currentMelo;
+    return;
   }
   const chordNotes = chords[songData.currentChordType].map(val => (val - 1 + songData.currentChord - 1) % 7);
   const availableNotes = [0, 1, 2, 3, 4, 5, 6]; // TODO: read that from Song Data
@@ -144,22 +145,6 @@ export const computeEuclideanValue = (x: number, density: number, gridSize: numb
   }
   // Default: linear
   return Math.floor(((x+1) * (64 - density)) / gridSize) + 1;
-}
-
-export const playNote = (
-  port: MIDIOutput,
-  channel: number,
-  note: number,
-  velocity: number
-) => {
-  if (note > -1 && note < 128)
-    port.send([0x80 | (1 << 4) | channel, note, velocity]);
-};
-
-export const stopNote = (port: MIDIOutput, channel: number, note: number) => {
-  if (note > -1 && note < 128) {
-    port.send([0x80 | (0 << 4) | channel, note, 64])
-  };
 };
 
 const noteNames = [
@@ -179,7 +164,7 @@ const noteNames = [
 const letters = "ABCDEFG";
 const majorIntervals = scales["major"];
 
-const noteNamesInScale = (songData: SongData): string[] => {
+const noteNamesInScale = (songData: SongModel): string[] => {
   // Work In Progress
   const result: string[] = [];
   console.log(songData.rootNote, songData.scale, scales[songData.scale]);
@@ -201,7 +186,7 @@ const noteNamesInScale = (songData: SongData): string[] => {
   return result;
 };
 
-export const noteNumberToName = (note: number, songData: SongData, showOctave = true): string => {
+export const noteNumberToName = (note: number, songData: SongModel, showOctave = true): string => {
   // C4 = 60
   const noteName = noteNames[note % 12];
   const octave = Math.trunc(note / 12) - 1;
@@ -209,117 +194,4 @@ export const noteNumberToName = (note: number, songData: SongData, showOctave = 
     /* note.toString() + ":" + */ noteName +
     (showOctave ? octave.toString() : "")
   );
-};
-
-export function isMIDIMessageEvent(
-  event: Event | MIDIMessageEvent
-): event is MIDIMessageEvent {
-  return (event as MIDIMessageEvent).data !== undefined;
-}
-
-export function isMIDIInput(device: MIDIInput | MIDIOutput): device is MIDIInput {
-  return (device as MIDIInput).onmidimessage !== undefined;
-}
-
-export const getMIDIMessage = (message: MIDIMessageEvent) => {
-  let type = "";
-  let channel: string | number = "";
-  let system = null;
-  const data = message.data;
-  const time = message.timeStamp;
-
-  switch (message.data[0] & 0xf0) {
-    case 0x80 | (0 << 4):
-      type = "Note Off";
-      break;
-
-    case 0x80 | (1 << 4):
-      type = "Note On";
-      break;
-
-    case 0x80 | (2 << 4):
-      type = "Aftertouch";
-      break;
-
-    case 0x80 | (3 << 4):
-      type = "Control Change";
-      break;
-
-    case 0x80 | (4 << 4):
-      type = "Program Change";
-      break;
-
-    case 0x80 | (5 << 4):
-      type = "Aftertouch Channel";
-      break;
-
-    case 0x80 | (6 << 4):
-      type = "PitchBend";
-      break;
-
-    case 0x80 | (7 << 4):
-      type = "System";
-      system = message.data[0] & 0x0f;
-      break;
-  }
-
-  if (system != null) {
-    switch (system) {
-      case 0:
-        channel = "Exclusive";
-        break;
-
-      case 1:
-        channel = "Time";
-        break;
-
-      case 2:
-        channel = "Song Position";
-        break;
-
-      case 3:
-        channel = "Song Select";
-        break;
-
-      case 6:
-        channel = "Tune Request";
-        break;
-
-      case 7:
-        channel = "Exclusive End";
-        break;
-
-      case 8:
-        channel = "Clock";
-        break;
-
-      case 10:
-        channel = "Start";
-        break;
-
-      case 11:
-        channel = "Continue";
-        break;
-
-      case 12:
-        channel = "Stop";
-        break;
-
-      case 14:
-        channel = "Active Sense";
-        break;
-
-      case 15:
-        channel = "Reset";
-        break;
-    }
-  } else channel = (message.data[0] & 0x0f) + 1;
-
-  return {
-    time,
-    data,
-    channel,
-    system,
-    type,
-  };
 };

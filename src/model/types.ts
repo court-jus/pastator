@@ -1,21 +1,10 @@
-import type { SavedTrackModel } from "@/model/TrackModel"
+import { SongModel } from "./SongModel";
+import type { TrackModel } from "./TrackModel"
 
 
 export type Scale = "major" | "minor";
 
 export type ChordType = "triad" | "power" | "sus2" | "sus4" | "sixth" | "seventh" | "ninth" | "eleventh";
-
-export interface SongData {
-  rootNote: number
-  scale: Scale
-  currentChord: number
-  currentChordType: ChordType
-  chordProgression: number[]
-}
-
-export interface SavedSongModel extends SongData {
-  tracks: SavedTrackModel[]
-}
 
 export interface Preset {
   id: string
@@ -42,3 +31,16 @@ export type MelotorModel = {
   meloChangeStrength: number;
   chordInfluence: number;
 };
+
+export type CallBacks = {
+  playNote: (channel: number, note: number, velocity: number) => void;
+  stopNote: (channel: number, note: number) => void;
+  remoteMessage: (messageType: string, data: any) => void;
+};
+
+export type WsMessage = {
+  messageType: string;
+  messageData: Record<string, any>;
+};
+
+

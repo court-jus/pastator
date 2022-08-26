@@ -1,13 +1,17 @@
-import type { DegreesRelation, EuclideanMode, MelotorModel, Preset, SongData } from "./types";
-import { computeEuclidean, computeMelotor, getNotes, playNote, stopNote } from "./engine";
+import type { DegreesRelation, EuclideanMode, MelotorModel, Preset } from "./types";
+import { computeEuclidean, computeMelotor, getNotes } from "./engine";
 import { BarLength, rythmPresets, notesPresets } from "./presets";
+import { SongModel } from "./SongModel";
+import { v4 as uuidv4 } from "uuid";
 
 
 export type RythmMode = "manual" | "preset" | "16steps" | "euclidean" | "durations";
 export type NotesMode = "manual" | "preset" | "ponderated" | "melotor" | "random";
 
+
 export class TrackModel {
-  device: MIDIOutput;
+  id: string;
+  song: SongModel;
   channel: number;
   division: number;
   currentNotes: Record<number, number>;
@@ -41,8 +45,9 @@ export class TrackModel {
   cachedAvailableNotes?: number[];
   timeouts: number[];
 
-  constructor(device: MIDIOutput) {
-    this.device = device;
+  constructor(song: SongModel) {
+    this.id = uuidv4();
+    this.song = song;
     this.channel = 0;
     this.division = BarLength / 4;
     this.gate = 90;
@@ -67,19 +72,33 @@ export class TrackModel {
   }
 
   // Load/Save/...
-  load(trackData: SavedTrackModel) {
+  apply(trackData: LoadableTrackModel) {
     Object.assign(this, trackData);
     this.octaves = trackData.octaves || [0];
     this.singleShots = trackData.singleShots || 0;
   }
+  load(trackData: LoadableTrackModel) {
+    this.apply(trackData);
+    if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+      this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: this.save()});
+    }
+  }
   save(): SavedTrackModel {
-    // internalKeys: "device", "notesPosition", "playing", "currentNotes", ...
-    const {device, notesPosition, rythmPosition, playing, currentNotes, ...dataToSave} = this;
+    // internalKeys: "notesPosition", "currentNotes", ...
+    const {
+      notesPosition,
+      rythmPosition,
+      currentNotes,
+      cachedAvailableNotes,
+      timeouts,
+      song,
+      ...dataToSave
+    } = this;
     return dataToSave;
   }
 
   // Utilities (caching, setters...)
-  getAvailableNotes(songData: SongData) {
+  getAvailableNotes(songData: SongModel) {
     if(this.cachedAvailableNotes === undefined || this.cachedAvailableNotes.length === 0) return this.availableNotes(songData);
     return this.cachedAvailableNotes;
   }
@@ -87,18 +106,30 @@ export class TrackModel {
     if (density !== undefined) this.rythmDensity = density;
     if (mode !== undefined) this.euclideanMode = mode;
     this.rythm();
+    if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+      this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: {
+        rythmDensity: this.rythmDensity,
+        euclideanMode: this.euclideanMode
+      }});
+    }
   }
   setChannel(newChannel: number) {
     this.stop();
     this.channel = newChannel;
+    if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+      this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: {channel: this.channel }});
+    }
   }
 
   // Transport
-  play(songData: SongData, clock: number) {
+  play() {
     this.playing = true;
+    if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+      this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: {playing: this.playing }});
+    }
     if (this.division === 0) {
       // Run drones on play, without waiting for a clock
-      this.emit(songData, clock);
+      this.emit();
     }
   }
   fullStop(panic = false) {
@@ -107,28 +138,45 @@ export class TrackModel {
     }
     this.rew();
     this.playing = false;
+    if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+      this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: {playing: this.playing }});
+    }
   }
-  playpause(songData: SongData, clock: number) {
+  playpause() {
     if (this.playing) {
       this.stop();
       this.playing = false;
-    } else {
-      this.play(songData, clock);
+      if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+        this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: {playing: this.playing }});
+      }
+      } else {
+      this.play();
     }
   }
   rew() {
     this.notesPosition = 0;
     this.rythmPosition = 0;
+    if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+      this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: {
+        notesPosition: this.notesPosition,
+        rythmPosition: this.rythmPosition
+      }});
+    }
   }
   addSingleShot() {
     this.singleShots =
       this.singleShots === undefined ? 1 : this.singleShots + 1;
+    if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+      this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: {
+        singleShots: this.singleShots
+      }});
+    }
   }
 
   // MIDI
   // NoteOn
-  emit(songData: SongData, clock: number) {
-    let availableNotes = this.availableNotes(songData);
+  emit() {
+    let availableNotes = this.availableNotes(this.song);
     if (this.debug) console.log("aN", [...availableNotes]);
     const reversed = [...availableNotes].reverse();
     const upDn = availableNotes.concat(reversed);
@@ -161,7 +209,7 @@ export class TrackModel {
         return [0, total + curr] as [number, number];
       }, [0, 0])[0];
     }
-    this.rythmPosition = Math.trunc(clock / this.division);
+    this.rythmPosition = Math.trunc(this.song.clock / this.division);
     const velocity = this.rythm();
     if (velocity > 0 && this.channel !== undefined && duration > 0) {
       if (this.debug) console.log(this.channel, "emit", playedNotes, "at", this.notesPosition);
@@ -170,13 +218,13 @@ export class TrackModel {
         if (this.strumDelay > 0) {
           this.timeouts.push(window.setTimeout(() => {
             if (!this.playing && this.singleShots === 0) return;
-            this.currentNotes[note + this.transpose] = clock + duration;
-            playNote(this.device, this.channel, note + this.transpose, velocity);
+            this.currentNotes[note + this.transpose] = this.song.clock + duration;
+            this.song.callbacks?.playNote(this.channel, note + this.transpose, velocity);
           }, delay));
           delay += this.playMode === "strum" ? this.strumDelay : 0;
         } else {
-          this.currentNotes[note + this.transpose] = clock + duration;
-          playNote(this.device, this.channel, note + this.transpose, velocity);
+          this.currentNotes[note + this.transpose] = this.song.clock + duration;
+          this.song.callbacks?.playNote(this.channel, note + this.transpose, velocity);
         }
       }
       this.notesPosition += 1;
@@ -191,7 +239,7 @@ export class TrackModel {
     if (this.channel === undefined) return;
     for (const key of Object.keys(this.currentNotes)) {
       const currentNote = parseInt(key, 10);
-      stopNote(this.device, this.channel, currentNote);
+      this.song.callbacks?.stopNote(this.channel, currentNote);
     }
     this.currentNotes = {};
     for (const timeout of this.timeouts) {
@@ -214,7 +262,7 @@ export class TrackModel {
     }
   }
   // Clock
-  tick(newClock: number, oldClock: number, songData: SongData) {
+  tick(oldClock: number) {
     if (this.division === 0) return;
     // this.notesPosition = Math.trunc(newClock / this.division);
     if (Object.keys(this.currentNotes).length > 0 && this.channel !== undefined) {
@@ -222,8 +270,8 @@ export class TrackModel {
       for (const key of Object.keys(this.currentNotes)) {
         const currentNote = parseInt(key, 10);
         const timeToStop = this.currentNotes[currentNote];
-        if (newClock >= timeToStop) {
-          stopNote(this.device, this.channel, currentNote);
+        if (this.song.clock >= timeToStop) {
+          this.song.callbacks?.stopNote(this.channel, currentNote);
           stopped.push(currentNote);
         }
       }
@@ -231,24 +279,24 @@ export class TrackModel {
         delete this.currentNotes[note];
       }
     }
-    if (newClock % this.division === 0 || oldClock === 0) {
+    if (this.song.clock % this.division === 0 || oldClock === 0) {
       if (
         this.playing ||
         (this.singleShots !== undefined && this.singleShots > 0)
       ) {
-        if (this.debug) console.log(this.channel, "advance at", newClock, "pos", this.notesPosition);
-        this.emit(songData, newClock);
+        if (this.debug) console.log(this.channel, "advance at", this.song.clock, "pos", this.notesPosition);
+        this.emit();
       }
     }
   }
 
   // Music
-  availableNotes(songData: SongData) {
+  availableNotes(songData: SongModel) {
     // Get and cache available notes
     this.cachedAvailableNotes = this._availableNotes(songData);
     return this.cachedAvailableNotes;
   }
-  _availableNotes(songData: SongData) {
+  _availableNotes(songData: SongModel) {
     if (this.melotor !== undefined && this.notesMode === "melotor") {
       this.recomputeMelotor(songData);
     }
@@ -331,12 +379,23 @@ export class TrackModel {
     this.division = newPreset.division;
     this.playMode = newPreset.playMode;
     this.relatedTo = newPreset.relatedTo;
+    if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+      this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: {
+        preset: this.preset,
+        rythmDefinition: this.rythmDefinition,
+        octaves: this.octaves,
+        availableDegrees: this.availableDegrees,
+        division: this.division,
+        playMode: this.playMode,
+        relatedTo: this.relatedTo
+      }});
+    }
   }
-  currentChordChange(songData: SongData, clock: number) {
+  currentChordChange() {
     if (!this.playing && this.singleShots === 0) return;
     if (this.division === 0) {
       this.stop();
-      this.emit(songData, clock);
+      this.emit();
     }
   }
   applyRythmMode(rythmMode: RythmMode) {
@@ -352,8 +411,15 @@ export class TrackModel {
       const newDensity = 64 / this.rythmDefinition.length * activeBeats;
       this.setEuclideanSettings({density: newDensity});
     }
+    if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+      this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: {
+        rythmMode: this.rythmMode,
+        rythmDefinition: this.rythmDefinition,
+        euclideanMode: this.euclideanMode
+      }});
+    }
   }
-  applyNotesMode(notesMode : NotesMode, songData: SongData) {
+  applyNotesMode(notesMode : NotesMode, songData: SongModel) {
     this.notesMode = notesMode;
     if (this.notesMode === 'melotor') {
       this.playMode = "up";
@@ -368,28 +434,61 @@ export class TrackModel {
           chordInfluence: 25,
         }
       }
-      this.melotor.currentMelo = computeMelotor(this.melotor, this.rythmPosition, this.division, songData);
-      this.cachedAvailableNotes = undefined;
+      const newMelo = computeMelotor(this.melotor, this.rythmPosition, this.division, songData);
+      if (newMelo) {
+        this.melotor.currentMelo = newMelo;
+        this.cachedAvailableNotes = undefined;
+      }
+    }
+    if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+      this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: {
+        relatedTo: this.relatedTo,
+        playMode: this.playMode,
+        notesMode: this.notesMode,
+        melotor: this.melotor
+      }});
     }
   }
   applyRythmPreset(rythmId: string) {
     if (rythmId === "nil") return;
     const rythm = rythmPresets[rythmId].data;
     this.rythmDefinition = rythm;
+    if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+      this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: {
+        rythmDefinition: this.rythmDefinition
+      }});
+    }
   }
   applyNotesPreset(presetId: string) {
     if (presetId === "nil") return;
     const notes = notesPresets[presetId];
     this.availableDegrees = notes.data;
     this.relatedTo = notes.relatedTo;
-  }
-  recomputeMelotor(songData: SongData) {
-    if (this.melotor) {
-      this.melotor.currentMelo = computeMelotor(this.melotor, this.rythmPosition, this.division, songData);
-      this.availableDegrees = this.melotor.currentMelo;
+    if (this.song.architecture === "clientserver" || this.song.architecture === "back") {
+      this.song.callbacks?.remoteMessage("setTrack", { trackId: this.id, data: {
+        availableDegrees: this.availableDegrees,
+        relatedTo: this.relatedTo
+      }});
     }
   }
-
+  recomputeMelotor(songData: SongModel) {
+    if (this.melotor) {
+      const newMelo = computeMelotor(this.melotor, this.rythmPosition, this.division, songData);
+      if (newMelo) {
+        this.melotor.currentMelo = newMelo;
+        this.availableDegrees = this.melotor.currentMelo;
+        if (this.song.architecture === "back") {
+          this.song.callbacks?.remoteMessage("setTrack", {
+            trackId: this.id,
+            data: {
+              melotor: this.melotor,
+              availableDegrees: this.availableDegrees
+            }
+          })
+        }
+      }
+    }
+  }
 }
 
 
@@ -417,5 +516,8 @@ export type SavedTrackModel = Pick<TrackModel,
   "presetId" |
   "presetCategory" |
   "melotor" |
-  "singleShots"
+  "singleShots" |
+  "playing"
 >;
+
+export type LoadableTrackModel = Partial<SavedTrackModel>;

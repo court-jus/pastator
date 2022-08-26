@@ -8,9 +8,15 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "deploy": "node scripts/gh-pages-deploy.js"
+    "deploy": "node scripts/gh-pages-deploy.js",
+    "serve": "cd src/server && npx tsc --esModuleInterop --resolveJsonModule --outDir ../../dist/server main && cd ../../dist/server/server && node main.js"
   },
   "dependencies": {
+    "easymidi": "^2.1.0",
+    "express": "^4.18.1",
+    "socket.io": "^4.5.1",
+    "socket.io-client": "^4.5.1",
+    "uuid": "^8.3.2",
     "vue": "^3.2.37",
     "vue-slider-component": "^4.1.0-beta.2",
     "vue3-tour": "^0.3.1"

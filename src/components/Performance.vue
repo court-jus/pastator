@@ -1,8 +1,14 @@
 <script setup lang="ts">
 interface Props {
-  clock: number
-  device: MIDIOutput
-  ccDevice?: MIDIInput
+  song: SongModel
+  addTrack: (track?: TrackModel) => void
+  panic: () => void
+  playpause: (a: boolean, b: boolean) => void
+  rewind: () => void
+  newProject: () => void
+  saveFile: (fileName: string) => void
+  removeTrack: (trackId: string) => void
+  loadFile: (evt: Event) => void
 }
 defineProps<Props>()
 </script>
@@ -11,25 +17,18 @@ defineProps<Props>()
 import { defineComponent } from "vue";
 import { TrackModel } from "@/model/TrackModel";
 import TrackList from "./TrackList.vue";
-import type { SongData, SavedSongModel } from "@/model/types";
-import { noteNumberToName, isMIDIMessageEvent, getMIDIMessage } from "@/model/engine";
+import type { ChordType, Scale } from "@/model/types";
+import { noteNumberToName } from "@/model/engine";
 import { scales, chords, BarLength } from "@/model/presets";
-import { download } from "@/utils";
 import type { Tour } from "@/types";
 import ConfirmButton from "./ConfirmButton.vue";
-import SongInDMinor from "@/examples/dminor";
-import SongMelotor from "@/examples/melotor";
-import SongDhamar from "@/examples/dhamar";
+import { SongModel } from "@/model/SongModel";
 
 type ViewType = "expand" | "reduced" | "perf";
 
 interface Data {
-  tracks: TrackModel[]
-  songData: SongData
   fileName: string
   position: number
-  playing: boolean
-  tracksPlaying: boolean
   barLength: number
   tour: Tour
   trackTour: Tour
@@ -39,19 +38,9 @@ interface Data {
 export default defineComponent({
   data(): Data {
     return {
-      tracks: [] as TrackModel[],
       viewType: 'reduced',
       fileName: "",
-      songData: {
-        chordProgression: [1, 4, 6, 5],
-        rootNote: 60,
-        scale: "major",
-        currentChord: 1,
-        currentChordType: "triad"
-      },
       position: 0,
-      playing: false,
-      tracksPlaying: false,
       barLength: BarLength,
       tour: {
         steps: [{
@@ -152,43 +141,16 @@ export default defineComponent({
   computed: {
     chordProgressionComputed: {
       get() {
-        return this.songData.chordProgression.join(" ");
+        return this.song.chordProgression.join(" ");
       },
       set(newValue: string) {
-        this.songData.chordProgression = newValue.split(" ").map((val: string) => parseInt(val, 10));
+        this.song.load({
+          chordProgression: newValue.split(" ").map((val: string) => parseInt(val, 10))
+        });
       }
-    },
-    relativeZero: function () {
-      return Math.trunc(this.$props.clock / this.barLength - this.position) * this.barLength;
-    }
-  },
-  watch: {
-    clock(newClock, oldClock) {
-      if (newClock < oldClock)  {
-        this.panic();
-      }
-      if (newClock % this.barLength === 0) {
-        this.position = Math.trunc(newClock / this.barLength);
-        if (this.playing) {
-          this.songData.currentChord = this.songData.chordProgression[this.position % this.songData.chordProgression.length];
-        }
-      }
-    },
-    ccDevice(newDevice: MIDIInput, oldDevice: MIDIInput | undefined) {
-      if (oldDevice !== undefined) {
-        oldDevice.onmidimessage = null;
-        oldDevice.close();
-      }
-      this.setupCCDevice(newDevice);
     }
   },
   methods: {
-    addTrack(track?: TrackModel) {
-      this.tracks.push(track ? track : new TrackModel(this.$props.device));
-      if (localStorage.getItem("skipTrackTour") !== "true" && localStorage.getItem("trackTourStarted") !== "true") {
-        this.$tours["trackTour"].start();
-      }
-    },
     cycleView() {
       if (this.viewType === 'reduced') {
         this.viewType = 'expand';
@@ -198,117 +160,11 @@ export default defineComponent({
         this.viewType = 'reduced';
       }
     },
-    removeTrack(index: number) {
-      this.tracks.splice(index, 1);
-    },
-    playpause(seq = true, tracks = true) {
-      if (seq) {
-        this.playing = !this.playing;
-      }
-      if (tracks) {
-        this.tracksPlaying = !this.tracksPlaying;
-        for (const track of this.tracks) {
-          if (this.tracksPlaying) {
-            track.play(this.songData, this.clock);
-          } else {
-            track.fullStop();
-          }
-        }
-      }
-    },
-    stop(seq = true, tracks = true) {
-      if (seq) {
-        this.playing = false;
-      }
-      if (tracks) {
-        this.tracksPlaying = false;
-        for (const track of this.tracks) {
-          track.fullStop();
-          track.rew();
-        }
-      }
-      this.rewind();
-    },
-    rewind() {
-      this.position = 0;
-      this.songData.currentChord = this.songData.chordProgression[this.position % this.songData.chordProgression.length];
-      for (const track of this.tracks) {
-        track.rew();
-      }
-    },
-    panic() {
-      this.stop();
-      for (const track of this.tracks) {
-        track.fullStop(true);
-        track.rew();
-      }
-    },
-    loadFile(evt: Event) {
-      this.tracks = [];
-      const files = (evt.target as HTMLInputElement).files;
-      if (files === null) return;
-      const f = files[0];
-      const reader = new FileReader();
-      reader.addEventListener("load", () => {
-        if (typeof reader.result === "string") {
-          this.fileName = f.name;
-          const loadedSongData = JSON.parse(reader.result) as SavedSongModel;
-          this.loadData(loadedSongData);
-        }
-      });
-      reader.readAsText(f);
-    },
-    loadData(loadedSongData: SavedSongModel) {
-      this.songData.rootNote = loadedSongData.rootNote;
-      this.songData.scale = loadedSongData.scale;
-      this.songData.currentChord = loadedSongData.currentChord;
-      this.songData.currentChordType = loadedSongData.currentChordType;
-      this.songData.chordProgression = loadedSongData.chordProgression;
-      for (const trackData of loadedSongData.tracks) {
-        const newTrack = new TrackModel(this.$props.device);
-        newTrack.load(trackData);
-        this.addTrack(newTrack);
-      }
-    },
-    newProject() {
-      this.tracks = [];
-    },
-    saveFile() {
-      const dataToSave: SavedSongModel = {
-        ...this.songData,
-        tracks: this.tracks.map(track => track.save())
-      }
-      const json = JSON.stringify(dataToSave, undefined, 2);
-      const filename = this.fileName ? (
-        this.fileName.toLowerCase().endsWith(".json") ? this.fileName : this.fileName + ".json"
-      ) : "pastasong.json";
-      download(filename, json);
-    },
-    setupCCDevice(newDevice: MIDIInput) {
-      newDevice.addEventListener("midimessage", (message) => {
-        if (isMIDIMessageEvent(message)) {
-          const m = getMIDIMessage(message);
-          if (m.type === "Control Change") {
-            const [, cc, val] = Array.from(m.data);
-            for (let trackIndex = 0; trackIndex < this.tracks.length; trackIndex++) {
-              if (trackIndex === m.channel as number - 1) {
-                this.tracks[trackIndex].receiveCC(cc, val);
-              }
-            }
-          }
-        }
-      });
-    }
   },
   mounted() {
     if (localStorage.getItem("skipPerfTour") !== "true") {
       this.$tours["perfTour"].start();
     }
-    if (this.ccDevice) {
-      this.setupCCDevice(this.ccDevice);
-    }
-    this.loadData(SongInDMinor);
-    // this.playpause(true, true);
   }
 });
 </script>
@@ -324,10 +180,10 @@ export default defineComponent({
         <div class="col-2">
           <div class="btn-group" role="group" id="transport-buttons">
             <button class="btn btn-small btn-outline-primary" @click="() => { playpause(true, true); }">
-              <i :class="'bi bi-' + ((playing && tracksPlaying) ? 'pause' : 'play') + '-circle'"></i>
+              <i :class="'bi bi-' + ((song.seqPlaying && song.tracksPlaying) ? 'pause' : 'play') + '-circle'"></i>
             </button>
             <button class="btn btn-small btn-outline-primary" @click="() => { playpause(true, false); }">
-              <i :class="'bi bi-' + (playing ? 'pause' : 'play') + '-fill'"></i>
+              <i :class="'bi bi-' + (song.seqPlaying ? 'pause' : 'play') + '-fill'"></i>
             </button>
             <button class="btn btn-small btn-outline-primary" @click="panic">
               <i class="bi bi-stop-fill"></i>
@@ -340,7 +196,7 @@ export default defineComponent({
         <div id="key-parameters" class="col-6">
           <div class="input-group">
             <span class="input-group-text">Root</span>
-            <select class="form-select" :value="songData.rootNote" @change="(evt) => { songData.rootNote = parseInt((evt.target as HTMLSelectElement).value, 10); }">
+            <select class="form-select" :value="song.rootNote" @change="(evt) => { song.load({ rootNote: parseInt((evt.target as HTMLSelectElement).value, 10) }); }">
               <option value="60">C</option>
               <option value="61">C#</option>
               <option value="62">D</option>
@@ -355,19 +211,19 @@ export default defineComponent({
               <option value="71">B</option>
             </select>
             <span class="input-group-text">Mode</span>
-            <select class="form-select" v-model="songData.scale">
+            <select class="form-select" :value="song.scale" @change="(ev: Event) => { song.load({ scale: (ev.target as HTMLSelectElement).value as Scale }); }">
               <option>major</option>
               <option>minor</option>
             </select>
-            <span class="input-group-text">{{ scales[songData.scale].map((val: number) => noteNumberToName(val + songData.rootNote,
-                songData, false)).join(" ")
+            <span class="input-group-text">{{ scales[song.scale].map((val: number) => noteNumberToName(val + song.rootNote,
+                song, false)).join(" ")
             }}</span>
           </div>
         </div>
         <div id="chords-control" class="col-4">
           <div class="input-group">
             <input class="form-control" id="chord-progression" v-model.lazy="chordProgressionComputed" />
-            <select class="form-select" id="chord-type" v-model="songData.currentChordType">
+            <select class="form-select" id="chord-type" :value="song.currentChordType" @change="(ev: Event) => { song.load({ currentChordType: (ev.target as HTMLSelectElement).value as ChordType }); }">
               <option>triad</option>
               <option>power</option>
               <option>sus2</option>
@@ -378,16 +234,16 @@ export default defineComponent({
               <option>eleventh</option>
             </select>
           </div>
-          <input class="form-control hidden" type="number" min="1" max="7" v-model="songData.currentChord" />
+          <input class="form-control hidden" type="number" min="1" max="7" :value="song.currentChord" @change="(ev: Event) => { song.load({ currentChord: parseInt((ev.target as HTMLInputElement).value, 10) }); }" />
           <div class="btn-group" role="group">
             <button class="btn btn-small btn-outline-primary" v-for="chordDegree of [1, 2, 3, 4, 5, 6, 7]"
-              @click="songData.currentChord = chordDegree"
-              :class="songData.currentChord === chordDegree ? 'active' : ''">
+              @click="() => song.load({ currentChord: chordDegree })"
+              :class="song.currentChord === chordDegree ? 'active' : ''">
               {{ chordDegree }}
             </button>
           </div>
           <span class="push-right">
-            {{ chords[songData.currentChordType].join(" ") }}
+            {{ chords[song.currentChordType].join(" ") }}
           </span>
         </div>
       </div>
@@ -397,7 +253,7 @@ export default defineComponent({
         <div class="col-2">
           <div class="btn-group" role="group">
             <button class="btn btn-outline-primary" id="add-track" @click="() => { playpause(false, true); }">
-              <i :class="'bi bi-' + (tracksPlaying ? 'pause' : 'play') + '-fill'"></i>
+              <i :class="'bi bi-' + (song.tracksPlaying ? 'pause' : 'play') + '-fill'"></i>
             </button>
             <ConfirmButton label="Remove all tracks" @confirmed="newProject">
               <i class="bi bi-radioactive"></i>
@@ -424,14 +280,15 @@ export default defineComponent({
         </div>
         <div class="col-5">
           <div class="input-group" role="group">
-            <button class="btn btn-outline-primary" @click="saveFile">Save project</button>
+            <button class="btn btn-outline-primary" @click="() => { saveFile(fileName); }">Save project</button>
             <input class="form-control" type="text" v-model="fileName" placeholder="Choose filename" />
           </div>
         </div>
       </div>
     </div>
     <div class="col-12" id="track-list">
-      <TrackList :tracks="tracks" :device="device" :song-data="songData" :clock="clock" :clock-start="relativeZero"
+      <TrackList
+        :song="song"
         :removeTrack="removeTrack" :viewType="viewType" />
     </div>
   </div>

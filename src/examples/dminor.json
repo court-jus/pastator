@@ -1,4 +1,8 @@
 {
+  "clock": 0,
+  "barLength": 96,
+  "tracksPlaying": false,
+  "seqPlaying": false,
     "chordProgression": [
       1,
       4,
@@ -9,8 +13,8 @@
     "scale": "minor",
     "currentChord": 5,
     "currentChordType": "triad",
-    "tracks": [
-      {
+    "tracks": {
+      "a": {
         "channel": 0,
         "division": 48,
         "gate": 90,
@@ -58,7 +62,7 @@
         ],
         "timeouts": []
       },
-      {
+      "b": {
         "channel": 1,
         "division": 6,
         "gate": 98,
@@ -127,7 +131,7 @@
         ],
         "timeouts": []
       },
-      {
+      "c": {
         "channel": 2,
         "division": 8,
         "gate": 90,
@@ -162,7 +166,7 @@
         ],
         "timeouts": []
       },
-      {
+      "d": {
         "channel": 3,
         "division": 96,
         "gate": 100,
@@ -208,7 +212,7 @@
         ],
         "timeouts": []
       },
-      {
+      "e": {
         "channel": 9,
         "division": 24,
         "gate": 90,
@@ -259,7 +263,7 @@
         ],
         "timeouts": []
       },
-      {
+      "f": {
         "channel": 9,
         "division": 12,
         "gate": 90,
@@ -322,7 +326,7 @@
         ],
         "timeouts": []
       },
-      {
+      "g": {
         "channel": 9,
         "division": 12,
         "gate": 90,
@@ -385,5 +389,5 @@
         ],
         "timeouts": []
       }
-    ]
+    }
   }
