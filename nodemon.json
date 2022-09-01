@@ -1,0 +1,5 @@
+{
+    "execMap": {
+        "ts": "ts-node --project server.tsconfig.json"
+    }
+}
