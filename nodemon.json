@@ -1,5 +1,9 @@
 {
     "execMap": {
         "ts": "ts-node --project server.tsconfig.json"
+    },
+    "events": {
+        "restart": "console.log('coucou')",
+        "start": "echo 'paf'"
     }
 }

@@ -1,10 +1,16 @@
 import type {
   DegreesRelation,
   EuclideanMode,
+  MelostepModel,
   MelotorModel,
   Preset,
 } from "./types";
-import { computeEuclidean, computeMelotor, getNotes } from "./engine";
+import {
+  computeEuclidean,
+  computeMelostep,
+  computeMelotor,
+  getNotes,
+} from "./engine";
 import { BarLength, rythmPresets, notesPresets } from "./presets";
 import { SongModel } from "./SongModel";
 import { v4 as uuidv4 } from "uuid";
@@ -20,6 +26,7 @@ export type NotesMode =
   | "preset"
   | "ponderated"
   | "melotor"
+  | "melostep"
   | "random";
 
 export class TrackModel {
@@ -53,6 +60,7 @@ export class TrackModel {
   presetId?: string;
   presetCategory?: string;
   melotor?: MelotorModel;
+  melostep?: MelostepModel;
   singleShots?: number;
   debug?: boolean;
   cachedAvailableNotes?: number[];
@@ -104,6 +112,7 @@ export class TrackModel {
   }
   save(): SavedTrackModel {
     // internalKeys: "notesPosition", "currentNotes", ...
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const {
       notesPosition,
       rythmPosition,
@@ -247,7 +256,7 @@ export class TrackModel {
   // MIDI
   // NoteOn
   emit() {
-    let availableNotes = this.availableNotes(this.song);
+    const availableNotes = this.availableNotes(this.song);
     if (this.debug) console.log("aN", [...availableNotes]);
     const reversed = [...availableNotes].reverse();
     const upDn = availableNotes.concat(reversed);
@@ -403,9 +412,7 @@ export class TrackModel {
     return this.cachedAvailableNotes;
   }
   _availableNotes(songData: SongModel) {
-    if (this.melotor !== undefined && this.notesMode === "melotor") {
-      this.recomputeMelotor(songData);
-    }
+    this.recomputeMelo(songData);
     const candidateNotes = getNotes(
       songData,
       this.availableDegrees,
@@ -554,7 +561,7 @@ export class TrackModel {
       });
     }
   }
-  applyNotesMode(notesMode: NotesMode, songData: SongModel) {
+  applyNotesMode(notesMode: NotesMode) {
     this.notesMode = notesMode;
     if (this.notesMode === "melotor") {
       this.playMode = "up";
@@ -573,11 +580,19 @@ export class TrackModel {
         this.melotor,
         this.rythmPosition,
         this.division,
-        songData
+        this.song
       );
       if (newMelo) {
         this.melotor.currentMelo = newMelo;
         this.cachedAvailableNotes = undefined;
+      }
+    } else if (this.notesMode === "melostep") {
+      this.playMode = "up";
+      this.relatedTo = "scale";
+      if (this.melostep === undefined) {
+        this.melostep = {
+          input: "*UDu_duD",
+        };
       }
     }
     if (
@@ -629,8 +644,8 @@ export class TrackModel {
       });
     }
   }
-  recomputeMelotor(songData: SongModel) {
-    if (this.melotor) {
+  recomputeMelo(songData: SongModel) {
+    if (this.melotor && this.notesMode === "melotor") {
       const newMelo = computeMelotor(
         this.melotor,
         this.rythmPosition,
@@ -645,6 +660,25 @@ export class TrackModel {
             trackId: this.id,
             data: {
               melotor: this.melotor,
+              availableDegrees: this.availableDegrees,
+            },
+          });
+        }
+      }
+    } else if (this.melostep && this.notesMode === "melostep") {
+      const newMelo = computeMelostep(
+        this.melostep,
+        this.rythmPosition,
+        this.division,
+        songData
+      );
+      if (newMelo) {
+        this.availableDegrees = newMelo;
+        if (this.song.architecture === "back") {
+          this.song.callbacks?.remoteMessage("setTrack", {
+            trackId: this.id,
+            data: {
+              melostep: this.melostep,
               availableDegrees: this.availableDegrees,
             },
           });
@@ -679,6 +713,7 @@ export type SavedTrackModel = Pick<
   | "presetId"
   | "presetCategory"
   | "melotor"
+  | "melostep"
   | "singleShots"
   | "playing"
 >;

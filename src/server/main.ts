@@ -7,6 +7,7 @@ import * as easymidi from "easymidi";
 import type { WsMessage } from "../model/types";
 import { SongModel } from "../model/SongModel";
 import { playNote, stopNote } from "../backends/easymidibackend";
+import { TrackModel } from "../model/TrackModel";
 
 const message: string = path.dirname("main.ts");
 console.log(message);
@@ -27,15 +28,19 @@ const io = new Server(server, {
 });
 
 let output: easymidi.Output, clock: easymidi.Input;
+const clockName = "midiclock:output 128:0";
+const synthName = "FLUID Synth (58473):Synth input port (58473:0) 130:0";
 
 try {
-  output = new easymidi.Output("loopMIDI Port 2");
+  output = new easymidi.Output(synthName);
 } catch (e) {
+  console.log(easymidi.getOutputs());
   output = new easymidi.Output("pastator", true);
 }
 try {
-  clock = new easymidi.Input("loopMIDI Port 1");
+  clock = new easymidi.Input(clockName);
 } catch (e) {
+  console.log(easymidi.getInputs());
   clock = new easymidi.Input("pastator", true);
 }
 
@@ -46,6 +51,14 @@ const song = new SongModel("back", {
     // Will be overridden when the web socket connects
   },
 });
+
+const track = new TrackModel(song);
+track.apply({
+  channel: 12,
+});
+track.applyNotesMode("melostep");
+song.addTrack(track);
+song.playpause(true, true);
 
 io.sockets.on("connection", function (socket) {
   console.log("User connected");
@@ -95,7 +108,7 @@ clock.addListener("stop", () => song.panic());
 
 const SendClockToClient = false;
 
-clock.addListener("clock", (clockEv) => {
+clock.addListener("clock", () => {
   const msg: WsMessage = {
     messageType: "clock",
     messageData: {},
